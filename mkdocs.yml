@@ -4,10 +4,10 @@ nav:
 site_description: Webinar/Tutorial on how to use the Intel OneAPI
 site_author: Emmanuel Kieffer
 site_dir: public
-site_url: "https://ekieffer.github.io/SYCL-DPCPP-FPGA"
+site_url: "https://ekieffer.github.io/oneAPI-FPGA"
 
 # Repository
-repo_name: ekieffer/SYCL-DPCPP-FPGA
+repo_name: ekieffer/oneAPI-FPGA
 repo_url: https://github.com/ekieffer/SYCL-DPCPP-FPGA
 
 # Copyright
