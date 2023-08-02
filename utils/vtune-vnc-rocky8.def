@@ -1,0 +1,48 @@
+Bootstrap: library
+From: rockylinux:8
+
+%runscript
+  exec /opt/start_script.sh
+
+%files
+ start_script.sh /opt
+  
+
+%post
+    echo "==== Customizing container"
+    dnf -y update
+    dnf -y install dnf dnf-plugins-core
+    dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+    dnf config-manager --set-enabled powertools
+    dnf -y update
+    dnf -y groupinstall "Infiniband Support"
+    dnf -y install vim wget tmux htop mc ncdu tree parallel bash-completion redhat-lsb-core
+    dnf -y install git tig cvs subversion hg
+    dnf -y install make
+    dnf -y -x gnome-keyring --skip-broken groups install "Xfce"
+    dnf -y groups install "Fonts"
+    dnf -y erase *power* *screensaver*
+    dnf -y install Lmod
+    dnf -y install tigervnc-server
+    dnf -y install python3 python3-numpy
+    #update-alternatives --install /usr/bin/python python $(which python3) 1
+    dnf clean all
+    rm /etc/xdg/autostart/xfce-polkit*
+
+
+    # Install noVNC
+    cd /opt
+    git clone https://github.com/novnc/noVNC/
+
+    # Install websockify
+    mkdir -p /opt/websockify
+    wget https://github.com/novnc/websockify/archive/master.tar.gz -q -O - | tar xzf - -C /opt/websockify --strip-components=1
+
+
+%labels
+    Container ulhpc-rocky8-xfce4
+    Author hpc-team@uni.lu
+    Version 2023-08-02
+
+%help
+    ULHPC reference Singularity container.

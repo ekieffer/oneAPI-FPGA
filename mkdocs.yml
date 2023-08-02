@@ -1,14 +1,17 @@
-site_name: Introduction to FPGA programming with OneAPI
+site_name: Introduction to FPGA programming with Intel® oneAPI
 nav:
-  - Home: 'index.md'
-site_description: Webinar/Tutorial on how to use the Intel OneAPI
+  - Course description: 'index.md'
+  - Prerequisites:
+    - Meluxina: 'meluxina.md'
+    - Intel Devcloud: 'devcloud.md'
+site_description: Webinar/Tutorial on how to use the Intel® oneAPI
 site_author: Emmanuel Kieffer
 site_dir: public
 site_url: "https://ekieffer.github.io/oneAPI-FPGA"
 
 # Repository
 repo_name: ekieffer/oneAPI-FPGA
-repo_url: https://github.com/ekieffer/SYCL-DPCPP-FPGA
+repo_url: https://github.com/ekieffer/oneAPI-FPGA
 
 # Copyright
 copyright: Copyright &copy; 2023 E. Kieffer
