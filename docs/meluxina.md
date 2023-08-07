@@ -17,14 +17,24 @@ Please follow the LuxProvide [documentation](https://docs.lxp.lu/first-steps/qui
 
 ## Accessing the fpga partition
 
-In order to use the oneAPI toolkit, you first need to take an interactive job. As we are focusing on FPGA, we select the fpga partition:
+
+The oneAPI toolkit is evolving quite rapidely. In order to show the last features, the last version has been compiled for the course/workshop.
+
+
+### Offline compilation
+
+In order to use the oneAPI toolkit, you first need to take an interactive job. We strongly recommend to open a persistent terminal session using `tmux`
+
+As we are focusing on FPGA, we select the fpga partition:
 
 ```bash
-salloc -A p200117 -t 01:00:00 -q default -p fpga -N 1
+$ tmux new -s fpga_session
+[fpga_session]$ salloc -A p200117 -t 01:00:00 -q default -p fpga -N 1
 ```
-Once the fpga node has been allocated to you, you can load the oneAPI toolkit with 
+Once the fpga node has been allocated to you, you can load the lastest oneAPI toolkit with 
 ```bash
-$ module load intel-compilers/2022.1.0
+[fpga_session]$ module use /project/home/p200117/apps/u100057/easybuild/modules/all
+[fpga_session]$ module load intel-compilers/2023.2.1-fpga_compile
 ```
 The root folder containing binaries, include and lib can be located using the `${EBROOTINTELMINCOMPILERS}`.
 ```bash
@@ -50,6 +60,22 @@ In order work with the Bittware Stratix 520MX provided by LuxProvide, we need to
 ```bash
 $ module load 520nmx/20.4
 ```
+
+### Execution
+
+Execution does not require the hardware compiler [Quartus Prime](https://www.intel.com/content/www/us/en/products/details/fpga/development-tools/quartus-prime.html). In order to execute the FPGA binary once it has been generated, the following modules should be loaded instead:
+
+```bash
+[fpga_session]$ module purge
+[fpga_session]$ module load 520nmx/20.4
+# Don't forget to comment the next command if you have started a new tmux/screen session
+#[fpga_session]$ module use /project/home/p200117/apps/u100057/easybuild/modules/all
+[fpga_session]$ module load intel-compilers/2023.2.1-fpga_execute
+```
+
+### Emulation
+
+Emulation only relies on the host cpu. In theory, you don't need to load the BSP board but you still need to `module load intel-compilers/2023.2.1-fpga_execute`.
 
 ##  Graphical sessions (VNC)
 
@@ -128,4 +154,4 @@ WebSocket server settings:
 *  Click on connect and enter your vnc password
 *  Your should see now the VTune profiler
 
-![](vtune-gui.png)
+![](./images/vtune-gui.png)
