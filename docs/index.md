@@ -1,5 +1,7 @@
 # Introduction to FPGA programming with Intel® oneAPI
 
+![](./images/Intel-oneAPI-logo-686x600.jpg){ align=right width=200 }
+
 [Intel® oneAPI](https://www.intel.com/content/www/us/en/developer/tools/oneapi/toolkits.html#gs.3c0top) is a software development toolkit from Intel designed to simplify the process of developing high-performance applications for various types of computing architecture. It aims to provide a unified and simplified programming model for CPUs, GPUs, FPGAs, and other types of hardware, such as AI accelerators, allowing developers to use a single codebase for multiple platforms.
 
 One of the main components of oneAPI is the [Data Parallel C++ (DPC++)](https://www.intel.com/content/www/us/en/developer/videos/dpc-part-1-introduction-to-new-programming-model.html#gs.3c0wb4), an open, standards-based language built upon the ISO C++ and SYCL standards. DPC++ extends C++ with features like parallel programming constructs and heterogeneous computing support, providing developers with the flexibility to write code for different types of hardware with relative ease.
