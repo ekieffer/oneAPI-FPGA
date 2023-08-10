@@ -8,7 +8,10 @@ nav:
   - Introduction to FPGA computing for the HPC ecosystem: 'intro.md'
   - Intel® LLVM SYCL oneAPI DPC++ :
     - What is the Intel® oneAPI DPC++ compiler: 'dpcpp.md'
-    - Compiling SYCL program with the DPC++ compiler : 'compile.md'
+    - Compiling SYCL programs: 'compile.md'
+    - Developing SYCL programs: 'writing.md'  
+    - Reporting & profiling SYCL programs: 'writing.md'  
+    - Optimizing SYCL programs: 'writing.md'  
 site_description: Webinar/Tutorial on how to use the Intel® oneAPI
 site_author: Emmanuel Kieffer
 site_dir: public
@@ -70,7 +73,7 @@ markdown_extensions:
   # notes, warnings, hints, ...
   - admonition
   - codehilite:
-      guess_lang: false
+      guess_lang: true
   - footnotes
   - markdown_include.include:
       base_path: docs
