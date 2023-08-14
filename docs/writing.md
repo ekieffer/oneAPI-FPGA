@@ -464,6 +464,159 @@ Implicit dependencies obey to three main patterns (see [DPC++ book](https://link
         * More data than stages, the pipeline is full and all hardware units are busy.
 
 !!! warning "Vectorization"
-    Vectorization is not the main source of parallelism but help design efficient pipeline. Since hardware can be reconfigured at will. The offline compiler can design N-bits Adders, multipliers which simplify greatly vectorization. In fact, the offline compiler vectorizes your design automatically if possible.
+    Vectorization is not the main source of parallelism but help designing efficient pipeline. Since hardware can be reconfigured at will. The offline compiler can design N-bits Adders, multipliers which simplify greatly vectorization. In fact, the offline compiler vectorizes your design automatically if possible.
+
+### Pipelining with ND-range kernels
+
+* ND-range kernels are based on a hierachical grouping of work-items
+* A work-item represents a single unit of work 
+* Independent simple units of work don't communicate or share data very often
+* Useful when porting a GPU kernel to FPGA
+
+<figure markdown>
+![](./images/ndrange.png) 
+  <figcaption><a href=https://link.springer.com/book/10.1007/978-1-4842-5574-2>DPC++ book</a> -- Figure 17-15 </figcaption>
+</figure>
+
+* FPGAs are different from GPU (lots of thread started at the same time)
+* Impossible to replicate a hardware for a million of work-items
+* Work-items are injected into the pipeline
+* A deep pipeline means lots of work-items executing different tasks in parallel
+
+<figure markdown>
+![](./images/ndrange_pipeline.png)
+  <figcaption><a href=https://link.springer.com/book/10.1007/978-1-4842-5574-2>DPC++ book</a> -- Figure 17-16 </figcaption>
+</figure>
+
+In order to write basic data-parallel kernel, you will need to use the `parallel_for` method. Below is an example of simple data-parallel kernel. As you can notice it, there is no notion of groups nor sub-groups.
+
+!!! example "Matrix addition"
+    ```cpp linenums="1"
+       constexpr int N = 2048;
+       constexpr int M = 1024;
+       queue.submit([&](sycl::handler &h) {
+         sycl::accessor acc_a{buffer_a, h, sycl::read_only};
+         sycl::accessor acc_b{buffer_b, h, sycl::read_only};
+         sycl::accessor acc_c{buffer_c, h, sycl::read_write, sycl::no_init};
+         h.parallel_for(range{N, M}, [=](sycl::id<2> idx) {
+          acc_c[idx] = acc_a[idx] + acc_b[idx];
+         });
+       });
+    ```
+
+In order to have a more fine-grained control of the data parallel-cluster
 
 
+!!! tig "Vector addition"
+    === "Question"
+        * Go to the `GettingStarted/fpga_compile/part4_dpcpp_lambda_buffers/src`
+        * Adapt the `vector_add.cpp` single-task kernel to a basis data-parallel kernel
+        * Emulate to verify your design
+    
+    === "Solution"
+        ```cpp linenums="1"
+        #include <iostream>
+        // oneAPI headers
+        #include <sycl/ext/intel/fpga_extensions.hpp>
+        #include <sycl/sycl.hpp>
+
+        // Forward declare the kernel name in the global scope. This is an FPGA best
+        // practice that reduces name mangling in the optimization reports.
+        class VectorAddID;
+
+        constexpr int kVectSize = 256;
+
+        int main() {
+        bool passed = true;
+          try {
+            // Use compile-time macros to select either:
+            //  - the FPGA emulator device (CPU emulation of the FPGA)
+            //  - the FPGA device (a real FPGA)
+            //  - the simulator device
+            #if FPGA_SIMULATOR
+                auto selector = sycl::ext::intel::fpga_simulator_selector_v;
+            #elif FPGA_HARDWARE
+                auto selector = sycl::ext::intel::fpga_selector_v;
+            #else  // #if FPGA_EMULATOR
+                auto selector = sycl::ext::intel::fpga_emulator_selector_v;
+            #endif
+
+            // create the device queue
+            sycl::queue q(selector);
+
+            // make sure the device supports USM host allocations
+            auto device = q.get_device();
+
+            std::cout << "Running on device: "
+                      << device.get_info<sycl::info::device::name>().c_str()
+                      << std::endl;
+
+            // declare arrays and fill them
+            int * vec_a = new(std::align_val_t{ 64 }) int[kVectSize];
+            int * vec_b = new(std::align_val_t{ 64 }) int[kVectSize];
+            int * vec_c = new(std::align_val_t{ 64 }) int[kVectSize];
+            for (int i = 0; i < kVectSize; i++) {
+              vec_a[i] = i;
+              vec_b[i] = (kVectSize - i);
+            }
+
+            std::cout << "add two vectors of size " << kVectSize << std::endl;
+            {
+              // copy the input arrays to buffers to share with kernel
+              sycl::buffer buffer_a{vec_a, sycl::range(kVectSize)};
+              sycl::buffer buffer_b{vec_b, sycl::range(kVectSize)};
+              sycl::buffer buffer_c{vec_c, sycl::range(kVectSize)};
+
+              q.submit([&](sycl::handler &h) {
+                // use accessors to interact with buffers from device code
+                sycl::accessor accessor_a{buffer_a, h, sycl::read_only};
+                sycl::accessor accessor_b{buffer_b, h, sycl::read_only};
+                sycl::accessor accessor_c{buffer_c, h, sycl::read_write, sycl::no_init};
+
+                h.parallel_for<VectorAddID>(sycl::range(kVectSize),[=](sycl::id<1> idx) {
+        	  accessor_c[idx] = accessor_a[idx] + accessor_b[idx];
+                });
+              });
+            }
+            // result is copied back to host automatically when accessors go out of
+            // scope.
+
+            // verify that VC is correct
+            for (int i = 0; i < kVectSize; i++) {
+              int expected = vec_a[i] + vec_b[i];
+              if (vec_c[i] != expected) {
+                std::cout << "idx=" << i << ": result " << vec_c[i] << ", expected ("
+                          << expected << ") A=" << vec_a[i] << " + B=" << vec_b[i]
+                          << std::endl;
+                passed = false;
+              }
+            }
+
+            std::cout << (passed ? "PASSED" : "FAILED") << std::endl;
+
+            delete[] vec_a;
+            delete[] vec_b;
+            delete[] vec_c;
+          } catch (sycl::exception const &e) {
+            // Catches exceptions in the host code.
+            std::cerr << "Caught a SYCL host exception:\n" << e.what() << "\n";
+
+            // Most likely the runtime couldn't find FPGA hardware!
+            if (e.code().value() == CL_DEVICE_NOT_FOUND) {
+              std::cerr << "If you are targeting an FPGA, please ensure that your "
+                           "system has a correctly configured FPGA board.\n";
+              std::cerr << "Run sys_check in the oneAPI root directory to verify.\n";
+              std::cerr << "If you are targeting the FPGA emulator, compile with "
+                           "-DFPGA_EMULATOR.\n";
+            }
+            std::terminate();
+          }
+          return passed ? EXIT_SUCCESS : EXIT_FAILURE;
+        }
+        ```
+
+
+
+
+
+### Pipelining with single-work items (loop)
