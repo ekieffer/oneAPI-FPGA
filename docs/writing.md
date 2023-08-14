@@ -209,7 +209,7 @@ Buffers and accessors are key abstractions that enable memory management and dat
 
 * The `vector_add.cpp` source code introduced in the [compiling](./compile.md) section relies on buffers and accessors. Although DPC++ is built on top of SYCL, the use of specific hardware needs some attentions
 
-!!! tig "Executing the FPGA bitsream"
+!!! tig "Executing the FPGA bitstream"
     === "Question"
         * Go to `/project/home/p200117/FPGA`
         * We have build to different FPGA bitstream versions of `vector_add.cpp`:
@@ -246,9 +246,10 @@ Buffers and accessors are key abstractions that enable memory management and dat
 Contrary to OpenCL, queues in SYCL are out-of-order by default. Nonetheless, you can change this behavior you declare it in your code.
 
 !!! example "In-order-queue"
-    ```c
+    <div style="width: 70%; float: left">
+    ```cpp
       ... 
-      queue device_queue{property::queue::in_order()};
+      queue device_queue{sycl::ext::intel::fpga_selector_v};
       // Task A
       device_queue.submit([&](handler& h) {
             h.single_task<TaskA>([=]() { });
@@ -261,19 +262,208 @@ Contrary to OpenCL, queues in SYCL are out-of-order by default. Nonetheless, you
       device_queue.submit([&](handler& h) {
             h.single_task<TaskC>([=]() { });
       }); 
-      ...    
+      ...
     ```
+    </div>
+    <div style="width: 20%; float: right">
+    ``` mermaid
+    graph TD
+    A[TaskA] --> B[TaskB];
+    B[TaskB] --> C[TaskC];
+    ```
+    </div>
 
 
-``` mermaid
-graph LR
-  A[Start] --> B{Error?};
-  B -->|Yes| C[Hmm...];
-  C --> D[Debug];
-  D --> B;
-  B ---->|No| E[Yay!];
-```
+This behavior is not very useful nor flexible. Queue objects, by default, are out-of-order queues, except when they're constructed with the in-order queue property. Because of this, they must include mechanisms to arrange tasks that are sent to them. The way queues organize tasks is by allowing the user to notify the runtime about the dependencies that exist between these tasks. These dependencies can be described in two ways: either explicitly or implicitly, through the use of command groups.
+
+A command group is a specific object that outlines a task and its dependencies. These groups are generally expressed as C++ lambdas and are handed over as arguments to the submit() method within a queue object. The single parameter within this lambda is a reference to a handler object, utilized inside the command group to define actions, generate accessors, and outline dependencies.
 
 
+### Explicit dependencies
 
-## Kernel scope
+Like for OpenCL, you can manage dependencies explicitly using events. 
+
+!!! example "Using events"
+    <div style="width: 75%; float: left">
+    ```cpp
+      ... 
+      queue device_queue{sycl::ext::intel::fpga_selector_v};
+      // Task A
+      auto event_A = device_queue.submit([&](handler &h) {
+            h.single_task<TaskA>([=]() { });
+      });
+      event_A.wait();
+      // Task B
+      auto event_B = device_queue.submit([&](handler &h) {
+            h.single_task<TaskB>([=]() { });
+      });
+      // Task C
+      auto event_C = device_queue.submit([&](handler &h) {
+            h.single_task<TaskC>([=]() { });
+      });
+      // Task D
+      device_queue.submit([&](handler &h) {
+      h.depends_on({eB, eC});
+      h.parallel_for(N, [=](id<1> i) { /*...*/ });
+      }).wait();
+      ...
+    ```
+    </div>
+    <div style="width: 25%; float: right">
+    ``` mermaid
+    graph TD
+    A[TaskA] --> B[TaskB];
+    A[TaskA] --> C[TaskC];
+    B[TaskB] --> D[TaskD];
+    C[TaskC] --> D[TaskD];
+    ```
+    </div>
+
+
+* Explicit dependencies using events is relevant when you use USM since buffers make use of accessors to model data dependencies.
+* They are three possibilities to declare a dependcies explicitely:
+1. Calling the method `wait()` on the queue it-self
+2. Calling the method `wait` on the event return by the queue after submitting a command
+3. Calling the method `depends_on` of the handler object
+
+### Implicit dependencies
+
+* Implicit dependencies occurs when your are using buffer & accessor.
+* Accessors have different access modes:
+
+  1. **read_only**: The content of the buffer can only be accessed for reading. So the content will only be copied once to the device
+  2. **write_only**: The content of the buffer can only be accessed for writing. The content of buffer is still copied from host to device before the kernel starts 
+  3. **read_write**: The content of the buffer can be accessed for reading and writing.
+
+You can add the `no_init` property to an accessor in `write_only` mode. This tells the runtime that the original data contains in the buffer can be ignored and don't need to be copied from host to device.
+
+Implicit dependencies obey to three main patterns (see [DPC++ book](https://link.springer.com/book/10.1007/978-1-4842-5574-2)):
+
+* **Read-after-Write  (RAW)** : occurs when some data modified by a kernel should be read by another kernel. 
+* **Write-after-Read  (WAR)** : occurs when some data read by a kernel will be modified by another one
+* **Write-after-Write (WAW)** : occurs when two kernels modified the same data
+
+!!! tig "Implicit dependencies"
+    === "Question"
+         * By default without access mode, each accessor will be read_write inducing unnecessary copies.
+         * Note also the first use of `host_accessor`. Why did we use it here ?
+         * Modifiy the following code to take into account implicit dependencies.
+         ```cpp linenums="1"
+            constexpr int N = 100;
+            queue Q;
+            buffer<int> A{range{N}};
+            buffer<int> B{range{N}};
+            buffer<int> C{range{N}};
+            Q.submit([&](handler &h) {
+               accessor aA{A, h};
+               accessor aB{B, h};
+               accessor aC{C, h};
+               h.single_task<Kernel1>([=]() { 
+                  for(unsigned int i =0; i<N; i++)
+                      aA[i] = 10;
+                      aB[i] = 50;
+                      aC[i] = 0;
+               });
+            });
+            Q.submit([&](handler &h) {
+                accessor aA{A, h};
+                accessor aB{B, h};
+                accessor aC{C, h};
+                h.single_task<Kernel2>([=]() { 
+                   for(unsigned int i =0; i<N; i++)
+                      aC[i] += aA[i] + aB[i]; 
+                 });
+            });
+            Q.submit([&](handler &h) {
+                accessor aC{C, h};
+                h.single_task<Kernel3>([=]() {
+                  for(unsigned int i =0; i<N; i++)
+                     aC[i]++; 
+                });
+            });
+            host_accessor result{C};
+         ```
+
+    === "Solution"
+        ```cpp linenums="1"
+           constexpr int N = 100;
+           queue Q;
+           buffer<int> A{range{N}};
+           buffer<int> B{range{N}};
+           buffer<int> C{range{N}};
+           Q.submit([&](handler &h) {
+              accessor aA{A, h, write_only, no_init};
+              accessor aB{B, h, write_only, no_init};
+              accessor aC{C, h, write_only, no_init};
+              h.single_task<Kernel1>([=]() { 
+                 for(unsigned int i =0; i<N; i++)
+                     aA[i] = 10;
+                     aB[i] = 50;
+                     aC[i] = 0;
+              });
+           });
+           Q.submit([&](handler &h) {
+               accessor aA{A, h, read_only};
+               accessor aB{B, h, read_only};
+               accessor aC{C, h, write_only};
+               h.single_task<Kernel2>([=]() { 
+                  for(unsigned int i =0; i<N; i++)
+                     aC[i] += aA[i] + aB[i]; 
+                });
+           });
+           Q.submit([&](handler &h) {
+               accessor aC{C, h, write_only};
+               h.single_task<Kernel3>([=]() {
+                 for(unsigned int i =0; i<N; i++)
+                    aC[i]++; 
+               });
+           });
+           host_accessor result{C, read_only};
+        ```
+
+
+## Parallelism model for FPGA
+
+* FPGA strongly differs from ISA-based hardware such as CPU and GPU
+
+!!! note "Difference between **Instruction Set** architecture and **Spatial** architecture"
+    === "Instruction Set Architecture"
+        * Made for general-purpose computation: hardware is constantly reused 
+        * Workflow constrained by a set of pre-defined units (Control Units, ALUs, registers)
+        * Data/Register size are fixed
+        * Different instruction executed in each clock cycle : **temporal** execution  
+        ![](./images/isa.png)
+
+    === "Spatial Architecture"
+        * Keep only what it needs -- the hardware can be reconfigured
+        * Specialize the everything by unrolling the hardware: **spatial** execution
+        * Each operation uses a different hardware region
+        * The design can take more space than the FPGA offers 
+
+        ![](./images/spatial_arch.png){ width=90% }
+
+* The most obvious source of **parallelism** for FPGA is **pipelining** by inserting registers to store each operation output and keep all hardware unit busy. 
+
+* Pipelining parallelism has therefore many stages. 
+
+* If you don't have enough work to fill the pipeline, then the efficiency is very low.
+
+* The authors of the [DPC++ book](https://link.springer.com/book/10.1007/978-1-4842-5574-2) have illustrated it perfectly in Chapter 17.
+
+!!! note "Pipelining example provided chap.17 (DPC++ book)"
+    === "Processing a single element (Figure. 17-13)"
+        ![](./images/single.png)
+
+        * The pipeline is mostly empty.
+        * Hardware units are not busy and the efficiency is thus low.
+            
+
+    === "Taking advantage of pipelining (Figure 17-14)"
+        ![](./images/multiple.png)
+
+        * More data than stages, the pipeline is full and all hardware units are busy.
+
+!!! warning "Vectorization"
+    Vectorization is not the main source of parallelism but help design efficient pipeline. Since hardware can be reconfigured at will. The offline compiler can design N-bits Adders, multipliers which simplify greatly vectorization. In fact, the offline compiler vectorizes your design automatically if possible.
+
+
