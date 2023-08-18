@@ -46,7 +46,7 @@ Using SYCL, you can verify if you have access to the different features:
 !!! warning "Bittware 520N-MX"
     The USM host allocations is not supported by some BSPs. We will therefore use explicit data movement
 
-!!! tig "Explicit USM"
+!!! tip "Explicit USM"
     === "Question"
         * Go to the `GettingStarted/fpga_compile/part4_dpcpp_lambda_buffers/src`
         * Replace the original code with explicit USM code 
@@ -209,12 +209,12 @@ Buffers and accessors are key abstractions that enable memory management and dat
 
 * The `vector_add.cpp` source code introduced in the [compiling](./compile.md) section relies on buffers and accessors. Although DPC++ is built on top of SYCL, the use of specific hardware needs some attentions
 
-!!! tig "Executing the FPGA bitstream"
+!!! tip "Executing the FPGA bitstream"
     === "Question"
         * Go to `/project/home/p200117/FPGA`
         * We have build to different FPGA bitstream versions of `vector_add.cpp`:
-          1. Go to the folder `01-no_data_alignment` and execute the code on the FPGA card. What do you see ?
-          2. Now go to the folder `02-with_data_alignment` and execute the code on the FPGA card. How could we align data properly ?
+          1. Go to the folder `01-no_data_alignment/src` and execute the code on the FPGA card. What do you see ?
+          2. Now go to the folder `02-with_data_alignment/src` and execute the code on the FPGA card. How could we align data properly ?
       
     === "Solution"
         ```bash
@@ -343,7 +343,7 @@ Implicit dependencies obey to three main patterns (see [DPC++ book](https://link
 * **Write-after-Read  (WAR)** : occurs when some data read by a kernel will be modified by another one
 * **Write-after-Write (WAW)** : occurs when two kernels modified the same data
 
-!!! tig "Implicit dependencies"
+!!! tip "Implicit dependencies"
     === "Question"
          * By default without access mode, each accessor will be read_write inducing unnecessary copies.
          * Note also the first use of `host_accessor`. Why did we use it here ?
@@ -488,7 +488,7 @@ Implicit dependencies obey to three main patterns (see [DPC++ book](https://link
   <figcaption><a href=https://link.springer.com/book/10.1007/978-1-4842-5574-2>DPC++ book</a> -- Figure 17-16 </figcaption>
 </figure>
 
-In order to write basic data-parallel kernel, you will need to use the `parallel_for` method. Below is an example of simple data-parallel kernel. As you can notice it, there is no notion of groups nor sub-groups.
+* In order to write basic data-parallel kernel, you will need to use the `parallel_for` method. Below is an example of simple data-parallel kernel. As you can notice it, there is no notion of groups nor sub-groups. 
 
 !!! example "Matrix addition"
     ```cpp linenums="1"
@@ -504,10 +504,8 @@ In order to write basic data-parallel kernel, you will need to use the `parallel
        });
     ```
 
-In order to have a more fine-grained control of the data parallel-cluster
 
-
-!!! tig "Vector addition"
+!!! tip "Vector addition"
     === "Question"
         * Go to the `GettingStarted/fpga_compile/part4_dpcpp_lambda_buffers/src`
         * Adapt the `vector_add.cpp` single-task kernel to a basis data-parallel kernel
@@ -571,7 +569,7 @@ In order to have a more fine-grained control of the data parallel-cluster
                 // use accessors to interact with buffers from device code
                 sycl::accessor accessor_a{buffer_a, h, sycl::read_only};
                 sycl::accessor accessor_b{buffer_b, h, sycl::read_only};
-                sycl::accessor accessor_c{buffer_c, h, sycl::read_write, sycl::no_init};
+                sycl::accessor accessor_c{buffer_c, h, sycl::write_only, sycl::no_init};
 
                 h.parallel_for<VectorAddID>(sycl::range(kVectSize),[=](sycl::id<1> idx) {
         	  accessor_c[idx] = accessor_a[idx] + accessor_b[idx];
@@ -615,8 +613,111 @@ In order to have a more fine-grained control of the data parallel-cluster
         }
         ```
 
+* If you want to have a fine-grained control of your data-parallel kernel, ND-range data-parallel kernels are the equivalent of ND-range kernels in OpenCL. 
+
+!!! success "ND-range kernel in SYCL"
+    * `nd_range(range<dimensions> globalSize, range<dimensions> localSize);`
+    * ND-range kernels are defined with two range objects
+        - **global** representing the total size of work-items
+        - **local** representing the size of work-groups
+
+!!! tip "Tiled Matrix Multiplication"
+    === "Question"
+        * Fill the blank and complete the code
+         ```cpp linenums="1"
+         --8<-- "./code/04-matmult_ndrange/src/matmult_ndrange_with_blank.cpp"
+         ```
+        
+
+    === "Solution"
+         ```cpp linenums="1"
+         --8<-- "./code/04-matmult_ndrange/src/matmult_ndrange.cpp"
+         ```
+
+!!! warning "Warning on work-items group size"
+    * If the attribute [[intel::max_work_group_size(Z, Y, X)]] is not specified in your kernel, the workgroup size assumes a default value depending on compilation time and runtime constraints
+    * If your kernel contains a barrier, the Intel® oneAPI DPC++/C++ Compiler sets a default maximum scalarized work-group size of 128 work-items ==> without this attribute, the previous ND-Range kernel would have failed since we have a local work-group size of B x B = 256 work-items 
 
 
+### Pipelining with single-work item (loop)
+
+* When your code can't be decomposed into independent works, you can rely on loop parallelism using FPGA
+* In such a situation, the pipeline inputs is not work-items but loop iterations
+* For single-work-item kernels, the programmer need not do anything special to preserve the data dependency 
+* Communications between kernels is also much easier
+
+<figure markdown>
+![](./images/loop_pipeline.png)
+  <figcaption><a href=https://link.springer.com/book/10.1007/978-1-4842-5574-2>DPC++ book</a> -- Figure 17-21 </figcaption>
+</figure>
 
 
-### Pipelining with single-work items (loop)
+* FPGA can efficiently handle loop execution, often maintaining a fully occupied pipeline or providing reports on what changes are necessary to enhance occupancy.
+* It's evident that if loop iterations were substituted with work-items, where the value created by one work-item would have to be transferred to another for incremental computation, the algorithm's description would become far more complex.
+
+
+!!! note "Single-work item creation"
+    * Replace the `parallel_for`method by the `single_task` method defined in the handler class to create a single-work item kernel
+    * The source file `vector_add.cpp` from `GettingStarted/fpga_compile/part4_dpcpp_lambda_buffers/src` uses loop pipelining.
+
+    ```cpp linenums="1"
+      #include <sycl/ext/intel/fpga_extensions.hpp>
+      #include <sycl/sycl.hpp>
+
+      using namespace sycl;
+
+      int main(){
+
+
+      // queue creation & data initialization
+
+
+       q.submit([&](handler &h) {
+         h.single_task<class MyKernel>([=]() {
+           // Code to be executed as a single task
+         });
+       });
+       q.wait();
+      }
+    ``` 
+
+!!! tip "Inferring a shift register -- the accumulator case"
+    === "Problem"
+         * The following code sums double precision floating-point array
+         * The problem is the following one:
+           - For each loop iteration, the Intel® oneAPI DPC++/C++ Compiler takes 10 cycles to compute the result of the addition and then stores it in the variable temp_sum
+           - So you have a data dependency on temp_sum
+         ```cpp linenums="1"
+         --8<-- "./code/05-accumulator/src/accumulator.cpp"
+         ```
+    === "Question" 
+         * The following code rely on a shift register to relax the data dependency
+         * Fill in the blank to complete the implementation
+         ```cpp linenums="1"
+         --8<-- "./code/06-shift_register/src/shift_register_with_blank.cpp"
+         ```
+    === "Solution" 
+         ```cpp linenums="1"
+         --8<-- "./code/06-shift_register/src/shift_register.cpp"
+         ```
+
+## Summary
+
+!!! success "We have seen"
+    * The anatomy of SYCL program
+    * How to manage data movement between host and device for FPGA
+        - Explicit data movement with USM
+        - Implicit data movement with Buffers & accessors  
+    * How to manage data dependencies between kernels
+        - Explicit dependencies with events
+        - Implicit dependencies using buffers access mode 
+    * How to define kernels and the importance of pipelining in FPGA
+        - ND-range kernel created with the `parallel_for` method
+        - Single-work item kernel with the `single_task` method
+
+!!! failure "We did not see"
+    * Hierachical Parallels kernels
+    * Memory models and atomics
+    * The DPC++ Parallel STL
+
+

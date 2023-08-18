@@ -375,7 +375,20 @@ This phase produces the actual FPGA bitstream, i.e., a file containing the progr
     $ icpx -fsycl -fintelfpga host.o dev_image.a -o fast_recompile.fpga
     ```
 
+## Summary
 
+!!! success "We have seen"
+    * How to discover devices on your system
+    * How to manually compile a SYCL program
+        - for emulation
+        - for early reporting  
+        - full hardware compilation
+    * How to perform fast recompilation
+
+!!! failure "We did not see"
+    * Compilation for hardware simulation
+    * Advanced compilation with multiple source files
+    * Extract the bitstream from the final executable
     
 
 
