@@ -20,7 +20,7 @@ echo "Open following link http://localhost:${FORWARD_PORT}/vnc.html"
 
 
 srun -N1 -n1 -c1 singularity exec vtune-vnc-rocky8.app /opt/websockify/run --web /opt/noVNC/ ${WEB_PORT} ${IP_ADDRESS}:${VNC_PORT} &
-srun -N1 -n1 -c1 singularity run -B /apps:/apps vtune-vnc-rocky8.app 2>/dev/null
+srun -N1 -n1 -c1 singularity exec -B /apps:/apps -B /project:/project -B /project:/project -B /mnt:/mnt  vtune-vnc-rocky8.app /bin/bash start_script.sh 2>/dev/null
 
 
 

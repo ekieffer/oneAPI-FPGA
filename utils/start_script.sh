@@ -36,16 +36,26 @@ else
     "${TERM_CONFIG}"
 fi
 
-export DISPLAY=":10"
+find_next_display() {
+  local display_num=10
+  displays_in_use=$(ps aux | grep Xvnc | sed -rn 's/(\s) .*Xvnc (\:[0-9]+) .*/\1\2/p')
+  while true; do
+    if [[ ! "$displays_in_use" =~ "$USER :$display_num" ]] ; then
+      echo $display_num
+      return
+    fi
+    display_num=$((display_num + 1))
+  done
+}
+
+export DISPLAY=":$(find_next_display)"
+echo $DISPLAY
+#export DISPLAY=":10"
 vncserver ${DISPLAY}
-unset SESSION_MANAGER
 unset DBUS_SESSION_BUS_ADDRESS
 # Start up xfce desktop
-xfce4-session &
-# Start Vtune
+#xfce4-session 
 source /etc/profile
-module load VTune/2022.3.0
-vtune-gui
-xfce4-session-logout --fast
+startxfce4 
 vncserver -kill ${DISPLAY}
 

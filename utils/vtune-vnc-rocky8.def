@@ -1,12 +1,6 @@
 Bootstrap: library
 From: rockylinux:8
 
-%runscript
-  exec /opt/start_script.sh
-
-%files
- start_script.sh /opt
-  
 
 %post
     echo "==== Customizing container"
@@ -24,7 +18,7 @@ From: rockylinux:8
     dnf -y erase *power* *screensaver*
     dnf -y install Lmod
     dnf -y install tigervnc-server
-    dnf -y install python3 python3-numpy
+    dnf -y install python3 python3-numpy firefox
     #update-alternatives --install /usr/bin/python python $(which python3) 1
     dnf clean all
     rm /etc/xdg/autostart/xfce-polkit*

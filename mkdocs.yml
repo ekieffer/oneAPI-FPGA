@@ -10,8 +10,8 @@ nav:
     - What is the Intel® oneAPI DPC++ compiler: 'dpcpp.md'
     - Compiling SYCL programs: 'compile.md'
     - Developing SYCL programs: 'writing.md'  
-    - Reporting & profiling SYCL programs: 'writing.md'  
-    - Optimizing SYCL programs: 'writing.md'  
+    - Reporting & profiling SYCL programs: 'reporting_profiling.md'  
+    - Optimizing SYCL programs: 'optimization.md' 
 site_description: Webinar/Tutorial on how to use the Intel® oneAPI
 site_author: Emmanuel Kieffer
 site_dir: public
