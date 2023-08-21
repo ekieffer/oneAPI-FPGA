@@ -19,8 +19,8 @@ echo "On your laptop: ssh -p 8822 -NL ${FORWARD_PORT}:${IP_ADDRESS}:${WEB_PORT} 
 echo "Open following link http://localhost:${FORWARD_PORT}/vnc.html"
 
 
-srun -N1 -n1 -c1 singularity exec vtune-vnc-rocky8.app /opt/websockify/run --web /opt/noVNC/ ${WEB_PORT} ${IP_ADDRESS}:${VNC_PORT} &
-srun -N1 -n1 -c1 singularity exec -B /apps:/apps -B /project:/project -B /project:/project -B /mnt:/mnt  vtune-vnc-rocky8.app /bin/bash start_script.sh 2>/dev/null
+srun -N1 -n1 -c1 singularity exec vnc-rocky8.app /opt/websockify/run --web /opt/noVNC/ ${WEB_PORT} ${IP_ADDRESS}:${VNC_PORT} &
+srun -N1 -n1 -c1 singularity exec -B /apps:/apps -B /project:/project -B /project:/project -B /mnt:/mnt  vnc-rocky8.app /bin/bash start_script.sh 2>/dev/null
 
 
 

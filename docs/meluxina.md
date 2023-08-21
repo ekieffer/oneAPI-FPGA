@@ -93,13 +93,13 @@ The VNC system consists of two main components:
 * VNC Viewer: The VNC Viewer is the client software that runs on the device from which you want to access the remote computer. It receives the graphical data from the VNC server and presents it to the user, allowing them to interact with the remote desktop as if it were running locally.
 
 
-Meluxina nodes do not propose a VNC server application but we can remedy to it using [Singularity-CE containers](https://sylabs.io/singularity/). As this is not a course on container, we will not explain in details the i[singularity definition file](https://github.com/ekieffer/oneAPI-FPGA/blob/main/utils/vtune-vnc-rocky8.def).
+Meluxina nodes do not propose a VNC server application but we can remedy to it using [Singularity-CE containers](https://sylabs.io/singularity/). As this is not a course on container, we will not explain in details the [singularity definition file](https://github.com/ekieffer/oneAPI-FPGA/blob/main/utils/vnc-rocky8.def).
 
-In order to faciliate its usage, the following [launcher](https://github.com/ekieffer/oneAPI-FPGA/blob/main/utils/launcher_vtune.sh) can be used to start a batch job.
+In order to faciliate its usage, the following [launcher](https://github.com/ekieffer/oneAPI-FPGA/blob/main/utils/launcher_vnc-rocky8.sh) can be used to start a batch job.
 
 !!! example "launcher_vtune.sh"
     ```bash linenums="1" 
-    --8<-- "./utils/launcher_vtune.sh"
+    --8<-- "./utils/launcher_vnc-rocky8.sh"
     ```
 
 * Line 12 loads singularity
@@ -115,7 +115,7 @@ Load the Singularity module and exec vncpasswd using the container `vtune_vnc_ro
     ```bash
     $ salloc -A p200117 -t 48:00:00 -q default -p fpga -N 1
     (mel3013)$ module load Singularity-CE/3.10.2-GCCcore-11.3.0
-    (mel3013)$ singularity exec vtune-vnc-rocky8.app vncpasswd
+    (mel3013)$ singularity exec vnc-rocky8.app vncpasswd
                INFO:    Converting SIF file to temporary sandbox...
                Password:
   
@@ -124,7 +124,7 @@ Load the Singularity module and exec vncpasswd using the container `vtune_vnc_ro
 Add a password and close the interactive job `<CTRL-D>`. Your vnc password is now setup.
 
 
-Use `sbatch launcher_vtune.sh` to start the vnc server inside a batch job. Once resources are available, the job starts.
+Use `sbatch launcher_vnc-rocky8.sh` to start the vnc server inside a batch job. Once resources are available, the job starts.
 
 ```bash
 $ squeue
@@ -154,4 +154,4 @@ WebSocket server settings:
 *  Click on connect and enter your vnc password
 *  Your should see now the VTune profiler
 
-![](./images/vtune-gui.png)
+![](./images/vnc-rocky8.png)
