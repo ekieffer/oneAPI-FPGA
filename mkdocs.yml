@@ -4,7 +4,6 @@ nav:
   - Prerequisites:
     - Persistent terminal sessions: 'tmux_screen.md'
     - Meluxina: 'meluxina.md'
-    - Intel Devcloud: 'devcloud.md'
   - Introduction to FPGA computing for the HPC ecosystem: 'intro.md'
   - Intel® LLVM SYCL oneAPI DPC++ :
     - What is the Intel® oneAPI DPC++ compiler: 'dpcpp.md'
