@@ -172,7 +172,7 @@ aocl profile [options] /path/to/executable [executable options]
 ### Example
 
 !!! tig "Improve Bandwith using vectorization"
-    === "Without smid"
+    === "Without SIMD"
         * The folder `/project/home/p200117/FPGA/07-vector_add_ndrange_profiling/src` contains  FPGA image compiled with the option `-Xsprofile`
         * The kernel use a simple data-parallel kernel (no work-groups) to sum two arrays (size=2048) 
         * Using the GUI interface used previously, open the VTune software 
@@ -204,7 +204,7 @@ aocl profile [options] /path/to/executable [executable options]
         * The **128** work-items are evenly distributed among **8** SIMD lanes
         * $\frac{128}{8}$ = 16 wide vector operation
         * The offline compiler coalesces 8 loads to optimize (reduce) the access to memory in case there are no data dependencies
-    === "With smid"
+    === "With SIMD"
         * The folder `/project/home/p200117/FPGA/08-vector_add_ndrange_profiling_simd/src` contains  the vectorized version
         * Load into the current project the `/project/home/p200117/FPGA/07-vector_add_ndrange_profiling/src/profiling` folder which contains the files `profile.json` and `profile.mon`
         ![](./images/with_simd.png)
