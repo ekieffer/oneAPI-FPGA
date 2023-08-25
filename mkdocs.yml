@@ -35,6 +35,7 @@ theme:
     #    accent:  light blue
   features:
     - navigation.instant
+    - navigation.expand
     - content.code.copy
     - content.code.select
   # #   - tabs

@@ -685,7 +685,7 @@ Implicit dependencies obey to three main patterns (see [DPC++ book](https://link
     === "Problem"
          * The following code sums double precision floating-point array
          * The problem is the following one:
-           - For each loop iteration, the Intel® oneAPI DPC++/C++ Compiler takes 10 cycles to compute the result of the addition and then stores it in the variable temp_sum
+           - For each loop iteration, the Intel® oneAPI DPC++/C++ Compiler takes >1 cycles to compute the result of the addition and then stores it in the variable temp_sum
            - So you have a data dependency on temp_sum
          ```cpp linenums="1"
          --8<-- "./code/05-accumulator/src/accumulator.cpp"
