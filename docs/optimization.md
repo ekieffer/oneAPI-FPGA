@@ -59,168 +59,80 @@ Loop unrolling is an optimization technique that aims to increase parallelism an
         * The following SYCL code has been already compiled for you, execute it on the FPGA nodes for several data input size and record the throughput and kernel time
         * What do you observe ?
         ```cpp linenums="1"
-        #include <sycl/sycl.hpp>
-        #include <sycl/ext/intel/fpga_extensions.hpp>
-        #include <iomanip>
-        #include <iostream>
-        #include <string>
-        #include <vector>
-        
-        #include <boost/align/aligned_allocator.hpp>
-        
-        using namespace sycl;
-        
-        // Forward declare the kernel name in the global scope.
-        // This FPGA best practice reduces name mangling in the optimization reports.
-        template <int unroll_factor> class VAdd;
-        
-        // This function instantiates the vector add kernel, which contains
-        // a loop that adds up the two summand arrays and stores the result
-        // into sum. This loop will be unrolled by the specified unroll_factor.
-        template <int unroll_factor>
-        void VecAdd(const std::vector<float> &summands1,
-                    const std::vector<float> &summands2, std::vector<float> &sum,
-                    size_t array_size) {
-                    
-        #if FPGA_SIMULATOR
-          auto selector = sycl::ext::intel::fpga_simulator_selector_v;
-        #elif FPGA_HARDWARE
-          auto selector = sycl::ext::intel::fpga_selector_v;
-        #else  // #if FPGA_EMULATOR
-          auto selector = sycl::ext::intel::fpga_emulator_selector_v;
-        #endif
-        
-          try {
-            queue q(selector,property::queue::enable_profiling{});
-        
-            auto device = q.get_device();
-        
-            std::cout << "Running on device: "
-                      << device.get_info<sycl::info::device::name>().c_str()
-                      << std::endl;
-        
-            buffer buffer_summands1(summands1);
-            buffer buffer_summands2(summands2);
-            buffer buffer_sum(sum);
-        
-            event e = q.submit([&](handler &h) {
-              accessor acc_summands1(buffer_summands1, h, read_only);
-              accessor acc_summands2(buffer_summands2, h, read_only);
-              accessor acc_sum(buffer_sum, h, write_only, no_init);
-        
-              h.single_task<VAdd<unroll_factor>>([=]()
-                                                 [[intel::kernel_args_restrict]] {
-                // Unroll the loop fully or partially, depending on unroll_factor
-                #pragma unroll unroll_factor
-                for (size_t i = 0; i < array_size; i++) {
-                  acc_sum[i] = acc_summands1[i] + acc_summands2[i];
-                }
-              });
-            });
-        
-            double start = e.get_profiling_info<info::event_profiling::command_start>();
-            double end = e.get_profiling_info<info::event_profiling::command_end>();
-            // convert from nanoseconds to ms
-            double kernel_time = (double)(end - start) * 1e-6;
-        
-            std::cout << "unroll_factor " << unroll_factor
-                      << " kernel time : " << kernel_time << " ms\n";
-            std::cout << "Throughput for kernel with unroll_factor " << unroll_factor
-                      << ": ";
-            std::cout << std::fixed << std::setprecision(3)
-        #if defined(FPGA_SIMULATOR)
-                      << ((double)array_size / kernel_time) / 1e3f << " MFlops\n";
-        #else
-                      << ((double)array_size / kernel_time) / 1e6f << " GFlops\n";
-        #endif
-        
-          } catch (sycl::exception const &e) {
-            // Catches exceptions in the host code
-            std::cerr << "Caught a SYCL host exception:\n" << e.what() << "\n";
-        
-            // Most likely the runtime couldn't find FPGA hardware!
-            if (e.code().value() == CL_DEVICE_NOT_FOUND) {
-              std::cerr << "If you are targeting an FPGA, please ensure that your "
-                           "system has a correctly configured FPGA board.\n";
-              std::cerr << "Run sys_check in the oneAPI root directory to verify.\n";
-              std::cerr << "If you are targeting the FPGA emulator, compile with "
-                           "-DFPGA_EMULATOR.\n";
-            }
-            std::terminate();
-          }
-        }
-        
-        int main(int argc, char *argv[]) {
-        #if defined(FPGA_SIMULATOR)
-          size_t array_size = 1 << 4;
-        #else
-          size_t array_size = 1 << 26;
-        #endif
-        
-          if (argc > 1) {
-            std::string option(argv[1]);
-            if (option == "-h" || option == "--help") {
-              std::cout << "Usage: \n<executable> <data size>\n\nFAILED\n";
-              return 1;
-            } else {
-              array_size = std::stoi(option);
-            }
-          }
-        
-          std::vector<float,boost::alignment::aligned_allocator<float,64>> summands1(array_size);
-          std::vector<float,boost::alignment::aligned_allocator<float,64>> summands2(array_size);
-        
-          std::vector<float,boost::alignment::aligned_allocator<float,64>> sum_unrollx1(array_size);
-          std::vector<float,boost::alignment::aligned_allocator<float,64>> sum_unrollx2(array_size);
-          std::vector<float,boost::alignment::aligned_allocator<float,64>> sum_unrollx4(array_size);
-          std::vector<float,boost::alignment::aligned_allocator<float,64>> sum_unrollx8(array_size);
-          std::vector<float,boost::alignment::aligned_allocator<float,64>> sum_unrollx16(array_size);
-        
-          // Initialize the two summand arrays (arrays to be added to each other) to
-          // 1:N and N:1, so that the sum of all elements is N + 1
-          for (size_t i = 0; i < array_size; i++) {
-            summands1[i] = static_cast<float>(i + 1);
-            summands2[i] = static_cast<float>(array_size - i);
-          }
-        
-          std::cout << "Input Array Size:  " << array_size << "\n";
-        
-          // Instantiate VecAdd kernel with different unroll factors: 1, 2, 4, 8, 16
-          // The VecAdd kernel contains a loop that adds up the two summand arrays.
-          // This loop will be unrolled by the specified unroll factor.
-          // The sum array is expected to be identical, regardless of the unroll factor.
-          VecAdd<1>(summands1, summands2, sum_unrollx1, array_size);
-          VecAdd<2>(summands1, summands2, sum_unrollx2, array_size);
-          VecAdd<4>(summands1, summands2, sum_unrollx4, array_size);
-          VecAdd<8>(summands1, summands2, sum_unrollx8, array_size);
-          VecAdd<16>(summands1, summands2, sum_unrollx16, array_size);
-        
-          // Verify that the output data is the same for every unroll factor
-          for (size_t i = 0; i < array_size; i++) {
-            if (sum_unrollx1[i] != summands1[i] + summands2[i] ||
-                sum_unrollx1[i] != sum_unrollx2[i] ||
-                sum_unrollx1[i] != sum_unrollx4[i] ||
-                sum_unrollx1[i] != sum_unrollx8[i] ||
-                sum_unrollx1[i] != sum_unrollx16[i]) {
-              std::cout << "FAILED: The results are incorrect\n";
-              return 1;
-            }
-          }
-          std::cout << "PASSED: The results are correct\n";
-          return 0;
-        }
+        --8<-- "./code/09-loop_unroll/src/loop_unroll.cpp"
         ```
     === "Solution"
-        * Increasing the unroll factor improve throughput    
+
+        <div align="center">
+
+        | Unroll factor   | kernel execution time (ms)   | Throughput (GFlops) |
+        |:---------------:|:----------------------------:|:-------------------:|
+        |       1         |             77               |        0.447        |
+        |       2         |             58               |        0.591        |
+        |       4         |             43               |        0.804        |
+        |       8         |             40               |        0.857        |
+        |       16        |             39               |        0.882        |
+
+        </div>
+
+        * Increasing the unroll factor improves throughput    
         * Nonetheless, unrolling large loops should be avoided as it would require a large amount of hardware
         !!! warning "Recording kernel time"
             * In this example, we have also seen how to record kernel time.
-            * Using the property `property::queue::enable_profiling{}`
+            * Using the property `property::queue::enable_profiling{}`` adds the requirement that the runtime must capture profiling information for the command groups that are submitted from the queue 
+            * You can the capture  the start & end time using the following two commands:
+                - `double start = e.get_profiling_info<info::event_profiling::command_start>();`
+                - `double end = e.get_profiling_info<info::event_profiling::command_end>();`
+
+!!! warning "Caution with nested loops"
+    * Loop unrolling involves replicating the hardware of a loop body multiple times and reducing the trip count of a loop. Unroll loops to reduce or eliminate loop control overhead on the FPGA. 
+    * Loop-unrolling can be used to eliminate nested-loop structures.
+    * However avoid unrolling the outer-loop which will lead to **Resource Exhaustion** and dramatically increase offline compilation
+
+## Loop coalescing
+
+Utilize the `loop_coalesce` attribute to instruct the Intel® oneAPI DPC++/C++ Compiler to merge nested loops into one, preserving the loop's original functionality. By coalescing loops, you can minimize the kernel's area consumption by guiding the compiler to lessen the overhead associated with loop management.
+
+!!! example "Coalesced two loops"
+    === "Using the loop_coalesce attribute"
+    ```cpp
+    [[intel::loop_coalesce(2)]]
+    for (int i = 0; i < N; i++)
+       for (int j = 0; j < M; j++)
+          sum[i][j] += i+j;
+    ```
+    === "Equivalent code"
+    ```cpp
+    int i = 0;
+    int j = 0;
+    while(i < N){
+      sum[i][j] += i+j;
+      j++;
+      if (j == M){
+        j = 0;
+        i++;
+      }
+    }
+    ```
 
 
+## Ignore Loop-carried dependencies
 
+The **ivdep** attribute in Intel's oneAPI (as well as in other Intel compiler tools) is used to give a hint to the compiler about the independence of iterations in a loop. This hint suggests that there are no loop-carried memory dependencies that the compiler needs to account for when attempting to vectorize or parallelize the loop.
 
-## Avoiding nested loops
+When you use **ivdep**, you're essentially telling the compiler: "Trust me, I've reviewed the code, and the iterations of this loop do not have dependencies on each other. So, you can safely vectorize or parallelize this loop for better performance."
+
+!!! example "ivdep attribute"
+    ```cpp
+    #pragma ivdep
+    for (int i = 1; i < N; i++) {
+        A[i] = A[i - 1] + B[i];
+    }
+    ```
+    In the loop above, there appears to be a loop-carried dependency because each iteration of the loop seems to depend on the result of the previous iteration. However, if the programmer knows something about the data or the context in which the loop is used that the compiler might not be aware of, the ivdep pragma can be used to give the compiler the green light to vectorize the loop.
+
+!!! warning "Caution"
+    You should be very careful when using **ivdep**. Incorrectly using this pragma on a loop that does have dependencies can lead to unexpected results or undefined behavior. Always ensure that there are truly no dependencies in the loop before applying this hint.
 
 ## Memory Coalescing
 
