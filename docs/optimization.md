@@ -89,6 +89,36 @@ Loop unrolling is an optimization technique that aims to increase parallelism an
     * Loop-unrolling can be used to eliminate nested-loop structures.
     * However avoid unrolling the outer-loop which will lead to **Resource Exhaustion** and dramatically increase offline compilation
 
+## SIMD Work Items for ND-Range kernels
+
+* In the [Reporting & Profiling](./reporting_profiling.md#example) section we have seen that vectorization can improve bandwidth
+
+* ND-range kernel should use instead of classical data-parallel kernels
+* The work-group size needs to be set using the attribute `[[sycl::reqd_work_group_size(1, 1, REQD_WG_SIZE)]]`
+* To specify the number of SIMD work_items, you will need to add the following attribute `[[intel::num_simd_work_items(NUM_SIMD_WORK_ITEMS)]]`
+* Note that **NUM_SIMD_WORK_ITEMS** should divide evenly **REQD_WG_SIZE**
+* The supported values for **NUM_SIMD_WORK_ITEMS**  are 2, 4, 8, and 16
+
+!!! example "Example"
+        ```cpp linenums="1"
+        ...
+        h.parallel_for<VectorAddID>(
+        sycl::nd_range<1>(sycl::range<1>(2048), sycl::range<1>(128)),        
+            [=](sycl::nd_item<1> it) 
+            [[intel::num_simd_work_items(8),
+            sycl::reqd_work_group_size(1, 1, 128)]] {
+            auto gid = it.get_global_id(0);
+            accessor_c[gid] = accessor_a[gid] + accessor_b[gid];
+            });
+        });
+        ...
+        ```
+
+        * The **128** work-items are evenly distributed among **8** SIMD lanes
+        * $\frac{128}{8}$ = 16 wide vector operation
+        * The offline compiler coalesces 8 loads to optimize (reduce) the access to memory in case there are no data dependencies
+
+
 ## Loop coalescing
 
 Utilize the `loop_coalesce` attribute to instruct the Intel® oneAPI DPC++/C++ Compiler to merge nested loops into one, preserving the loop's original functionality. By coalescing loops, you can minimize the kernel's area consumption by guiding the compiler to lessen the overhead associated with loop management.
@@ -129,13 +159,149 @@ When you use **ivdep**, you're essentially telling the compiler: "Trust me, I've
         A[i] = A[i - 1] + B[i];
     }
     ```
-    In the loop above, there appears to be a loop-carried dependency because each iteration of the loop seems to depend on the result of the previous iteration. However, if the programmer knows something about the data or the context in which the loop is used that the compiler might not be aware of, the ivdep pragma can be used to give the compiler the green light to vectorize the loop.
-
 !!! warning "Caution"
     You should be very careful when using **ivdep**. Incorrectly using this pragma on a loop that does have dependencies can lead to unexpected results or undefined behavior. Always ensure that there are truly no dependencies in the loop before applying this hint.
 
-## Memory Coalescing
+## Memory 
 
-## Local memory
+### Static coalescing
+
+* Static coalescing is performed by the Intel® oneAPI DPC++/C++ Compiler contiguous accesses to global memory can be merged into a single wide access.
+
+* For static memory coalescing to occur, your code should be structured so that the compiler can detect a linear access pattern at compile time. The initial kernel code depicted in the previous figure can leverage static memory coalescing, as all indices into buffers a and b increase with offsets recognizable during compilation.
+
+
+<figure markdown>
+![](https://www.intel.com/content/dam/docs/us/en/optimization-guide/2023-1/9253AEE0-2330-480D-941B-B1D61496F8D0-low.png)
+  <figcaption><a href=https://www.intel.com/content/www/us/en/docs/oneapi-fpga-add-on/optimization-guide/2023-1/static-memory-coalescing.html>FPGA Optimization Guide for Intel® oneAPI Toolkits</a> -- Figure 17-21 </figcaption>
+</figure>
+
+### Data structure alignment
+
+In order to performance, structure alignment can be modified to be properly aligned. By default, the offline compiler aligns these elements based on:
+
+* The alignment should be a power of two.
+* The alignment should be a multiple of the least common multiple (LCM) of the word-widths of the structure member sizes.
+
+Let's take a simple but clear example to understand why alignment is so important.
+
+![](./images/alignment.png)
+
+!!! example "Removing padding and changing structure alignment"
+    * The offline compiler use padding to align properly a structure which artificially incread
+    ```cpp linenums="1"
+    --8<-- "./code/10-alignment/src/alignment_usm.cpp"
+    ```
+
+
+### Local memory
+
+#### Local memory in ND-Range kernels
+
+* You can improve memory access by using local and private memory.
+* When you define a private array, group local memory, or a local accessor, the Intel® oneAPI DPC++/C++ Compiler generates kernel memory in the hardware. This kernel memory is often termed on-chip memory since it originates from memory resources, like RAM blocks, present on the FPGA.
+* Local or private memory is a fast memory that should be favored when resources allow.
+
+!!! example "Private memory"
+    ```cpp linenums="1"
+    ...
+    q.submit([&](handler &h) {
+    // Create an accessor for device global memory from buffer buff
+    accessor acc(buff, h, write_only);
+    cgh.single_task([=]() {
+         // Declare a private array
+         int T[N];
+         // Write to private memory
+         for (int i = 0; i < N; i++)
+            T[i] = i;
+         // Read from private memory and write to global memory through the accessor
+         for (int i = 0; i < N; i+=2)
+            acc[i] = T[i] + T[i+1];
+         });
+    }); 
+    ...
+    ```
+* To set aside local memory that can be accessed and shared by every work item within a workgroup, establish a group-local variable within the function scope of a workgroup. Do this using the group_local_memory_for_overwrite function, illustrated in the subsequent example:
+
+!!! example "Local memory"
+    ```cpp linenums="1"
+    ...
+    q.submit([&](handler &h) {
+        h.parallel_for(
+            nd_range<1>(range<1>(256), range<1>(16)), [=](nd_item<1> item) {
+            int local_id = item.get_local_id();
+            auto ptr = group_local_memory_for_overwrite<int[16]>(item.get_group());
+            auto& ref = *ptr;
+            ref[local_id] = local_id++ ;
+            });
+        });
+    ... 
+    ```
+
+    * The ND-Range kernel has 16 workgroups with 16 work items for each group.
+    * A group-local variable (int[16]) is created for each group and shared through a multi_ptr to all work-items of the same group
+
+#### Settings memory banks
+
+* Local data can be stored  in separate  local memory banks for parallel memory accesses
+* Number of banks of a local memory can be adjusted (e.g., to increase the parallel access) 
+* Add the following attributes `[[intel::numbanks(#NB), intel::bankwidth(#BW)]]`:  
+    * `#NB` : number of banks 
+    * `#BW`: bankwidth to be considered 
+* Ex: `[[intel::numbanks(8), intel::bankwidth(16)]]lmem[8][4]`; 
+    * No two element can be accessed in parallel in lmem 
+    * Single bank local memory 
+* All rows accessible in parallel with numbanks(8) 
+* Different configurations patterns can be adopted 
+
+![](https://www.intel.com/content/dam/docs/us/en/optimization-guide/2023-2/0AF00E76-87E1-40B7-AE31-B5427F9460A3-low.png)
+
+!!! warning "Masking the last index"
+    * Intel's documentation states that "To enable parallel access, you must mask the dynamic access on the lower array index"
+    ```cpp linenums="1"
+    [[intel::numbanks(8), intel::bankwidth(16)]] int lmem[8][4];
+    #pragma unroll
+    for (int i = 0; i < 4; i+=2) {
+        lmem[i][x & 0x3] = ...;
+    } 
+    ```
+!!! tig "Exercice"
+    === "Question"
+        * Could you briefly describe the bank configuration of the following local memory declaration;
+        ```cpp
+         [[intel::numbanks(4),intel::bankwidth(8)]] int lmem[2][4];
+        ```
+    === "Solution"
+        ![](./images/bank_local_memory.png)
+
+#### Local memory replication
+
+!!! example "Example"
+    <div style="position:relative;">
+    <div style="display:inline-block; width:50%;">
+    ```cpp linenums="1"
+    [[intel::fpga_memory,
+    intel::singlepump,
+    intel::max_replicates(3)]] int lmem[16]; 
+    lmem[waddr] = lmem[raddr] +
+                  lmem[raddr + 1] +
+                  lmem[raddr + 2]; 
+    ```
+
+    * The offline compiler can replicate the local memory
+    * This allows to create multiple ports 
+    * Behaviour: 
+        * All read ports will be accessed in parallel 
+        * All write ports are connected together
+        * Data between replicate is identical 
+    * Parallel access to all ports is possible but consumes more hardware resources
+    * `[[intel::max_replicates(N)]]` control the replication factor
+
+
+    </div>
+    <div style="display:inline-block; width:50%;float:right;">
+    ![](./images/replicates.png){ align=right width=300 }
+    </div>
+    </div>
 
 ## Task parallelism with Inter-Kernel Pipes

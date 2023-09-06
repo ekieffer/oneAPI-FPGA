@@ -96,7 +96,7 @@ int main() {
 
             // Index in the local index space:
             int i = item.get_local_id()[0];
-	    int j = item.get_local_id()[1];
+	        int j = item.get_local_id()[1];
 
             float sum = 0;
             for (int p = 0; p < N/B; p++) {
@@ -110,7 +110,7 @@ int main() {
               // Perform computation using the local memory tile, and
               // matrix B in global memory.
               for (int kk = 0; kk < B; kk++) {
-		sum += tileA[i][kk] * tileB[kk][j];
+		        sum += tileA[i][kk] * tileB[kk][j];
               }
 
               // After computation, synchronize again, to ensure all
