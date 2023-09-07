@@ -4,6 +4,8 @@
 // oneAPI headers
 #include <sycl/ext/intel/fpga_extensions.hpp>
 #include <sycl/sycl.hpp>
+#include <chrono>
+using namespace std::chrono;
 
 #define ALIGNMENT 64
 #define IT 1024
@@ -13,40 +15,30 @@ constexpr int kVectSize = 2048;
 
 
 template<typename T>
-void test_structure(T* host, T* device, sycl::queue &q, int nb_iters){
+void test_structure( T* device,sycl::queue &q, int nb_iters){
 
-	  sycl::event e1 = q.submit([&](sycl::handler &h) {
-	  // copy host to device
-      h.memcpy(device, host, kVectSize * sizeof(T));
-      });
-	  e1.wait();
+      sycl::event e;
+      const sycl::property_list props = {sycl::property::buffer::use_host_ptr()};
 
-
-      q.submit([&](sycl::handler &h) {
+      auto start = high_resolution_clock::now();
+      sycl::buffer buffer_device{device, sycl::range(kVectSize),props};
+      e = q.submit([&](sycl::handler &h) {
+       sycl::accessor accessor_device{buffer_device, h, sycl::read_write};
        h.single_task([=]() {
        for(int it=0;it < nb_iters ;it++){
         for (int idx = 0; idx < kVectSize; idx++) {
-          device[idx].C = (int)device[idx].A + device[idx].B;
+          accessor_device[idx].C = (int)accessor_device[idx].A + accessor_device[idx].B;
          }
         }
         });
-       }).wait();
+       });
 
-
-	  sycl::event e2 = q.submit([&](sycl::handler &h) {
-	  // copy device to host
-      h.memcpy(host,device, kVectSize * sizeof(T));
-      });
-	  e2.wait();
-
-
-
-    double start = e1.get_profiling_info<sycl::info::event_profiling::command_start>();
-    double end = e2.get_profiling_info<sycl::info::event_profiling::command_end>();
+    sycl::host_accessor buffer_host(buffer_device);
+    auto stop = high_resolution_clock::now();
     // convert from nanoseconds to ms
-    double kernel_time = (double)(end - start) * 1e-6;
+    duration<double> kernel_time = stop - start;
 
-    std::cout  << " Time (" <<typeid(T).name()<<  ") : " << kernel_time << " ms\n";
+    std::cout  << " Time (" <<typeid(T).name()<<  ") : " << kernel_time.count() << " ms\n";
 }
 
 int main() {
@@ -95,36 +87,39 @@ int main() {
         int  C;
     } mystruct_packed_aligned;
 
+    //mystruct host_vec_a[kVectSize];
+    //mystruct_packed host_vec_b[kVectSize];
+    //mystruct_packed_aligned host_vec_c[kVectSize];
 
-    mystruct* host_vec_a = new(std::align_val_t{ 64 }) mystruct[kVectSize];
-    mystruct_packed* host_vec_b = new(std::align_val_t{ 64 }) mystruct_packed[kVectSize];
-    mystruct_packed_aligned* host_vec_c = new(std::align_val_t{ 64 }) mystruct_packed_aligned[kVectSize];
+    mystruct* vec_a = new(std::align_val_t{ 64 }) mystruct[kVectSize];
+    mystruct_packed* vec_b = new(std::align_val_t{ 64 }) mystruct_packed[kVectSize];
+    mystruct_packed_aligned* vec_c = new(std::align_val_t{ 64 }) mystruct_packed_aligned[kVectSize];
 
 
-    mystruct* vec_a = static_cast<mystruct*>(aligned_alloc_device(ALIGNMENT,kVectSize*sizeof(mystruct),q));
-    mystruct_packed* vec_b = static_cast<mystruct_packed*>(aligned_alloc_device(ALIGNMENT,kVectSize*sizeof(mystruct_packed),q));
-    mystruct_packed_aligned* vec_c = static_cast<mystruct_packed_aligned*>(aligned_alloc_device(ALIGNMENT,kVectSize*sizeof(mystruct_packed_aligned),q));
+    //mystruct * vec_a = static_cast<mystruct*>(aligned_alloc_device(ALIGNMENT,kVectSize*sizeof(mystruct),q));
+    //mystruct_packed*vec_b = static_cast<mystruct_packed*>(aligned_alloc_device(ALIGNMENT,kVectSize*sizeof(mystruct_packed),q));
+    //mystruct_packed_aligned*vec_c = static_cast<mystruct_packed_aligned*>(aligned_alloc_device(ALIGNMENT,kVectSize*sizeof(mystruct_packed_aligned),q));
 
     for (int i = 0; i < kVectSize; i++) {
-        host_vec_a[i].A = host_vec_b[i].A = host_vec_c[i].A = char(std::rand() % 256);
-        host_vec_a[i].B = host_vec_b[i].B = host_vec_c[i].B = std::rand();
-        host_vec_a[i].C = host_vec_b[i].C = host_vec_c[i].C = std::rand();
+        vec_a[i].A = vec_b[i].A = vec_c[i].A = char(std::rand() % 256);
+        vec_a[i].B = vec_b[i].B = vec_c[i].B = std::rand();
+        vec_a[i].C = vec_b[i].C = vec_c[i].C = std::rand();
     }
 
     std::cout << "Packed with default alignment" << kVectSize << std::endl;
 
-    test_structure<mystruct>(host_vec_a,vec_a,q,IT);
-    test_structure<mystruct_packed>(host_vec_b,vec_b,q,IT);
-    test_structure<mystruct_packed_aligned>(host_vec_c,vec_c,q,IT);
+    test_structure<mystruct>(vec_a,q,IT);
+    test_structure<mystruct_packed>(vec_b,q,IT);
+    test_structure<mystruct_packed_aligned>(vec_c,q,IT);
 
 
-    delete[] host_vec_a;
-    delete[] host_vec_b;
-    delete[] host_vec_c;
+    delete[] vec_a;
+    delete[] vec_b;
+    delete[] vec_c;
 
-    sycl::free(vec_a,q);
-    sycl::free(vec_b,q);
-    sycl::free(vec_c,q);
+    //sycl::free(vec_a,q);
+    //sycl::free(vec_b,q);
+    //sycl::free(vec_c,q);
 
   } catch (sycl::exception const &e) {
     // Catches exceptions in the host code.

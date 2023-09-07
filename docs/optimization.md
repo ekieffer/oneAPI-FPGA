@@ -188,10 +188,31 @@ Let's take a simple but clear example to understand why alignment is so importan
 ![](./images/alignment.png)
 
 !!! example "Removing padding and changing structure alignment"
-    * The offline compiler use padding to align properly a structure which artificially incread
-    ```cpp linenums="1"
-    --8<-- "./code/10-alignment/src/alignment_usm.cpp"
-    ```
+    === "Code"
+    
+        * The following code show the impact of changing the alignmement and padding using three scenarii:
+
+             * Default alignment and padding 
+
+             * Removing padding
+
+             * Changing alignment 
+
+        ```cpp linenums="1"
+        --8<-- "./code/10-alignment/src/alignment.cpp"
+        ```
+    === "Execution time"
+
+        <div align=center>
+
+        | Scenario                      | Processing time (seconds)  |
+        |: ---------------------------: | :-------------------------:|
+        | Default alignment and padding | 14.33                      |
+        | Removing padding              | 6.35                       |
+        | Changing alignment            | 0.03                       |
+
+        </div>
+
 
 
 ### Local memory
@@ -305,3 +326,94 @@ Let's take a simple but clear example to understand why alignment is so importan
     </div>
 
 ## Task parallelism with Inter-Kernel Pipes
+
+![](./images/all_pipes.png)
+
+Pipes function as a first-come, first-served buffer system, linking different parts of a design. The Intel® oneAPI DPC++/C++ Compiler offers various pipe types:
+
+* **Host Pipes**: These establish a connection between a host and a device.
+
+* **Inter-Kernel Pipes**: These facilitate efficient and low-latency data transfer and synchronization between kernels. They enable kernels to interact directly using on-device FIFO buffers, which utilize FPGA memory. The Intel® oneAPI DPC++/C++ Compiler promotes simultaneous kernel operation. By employing inter-kernel pipes for data movement among concurrently running kernels, data can be transferred without waiting for a kernel to finish, enhancing your design's throughput.
+
+* **I/O Pipes**: This is a one-way connection to the hardware, either as a source or sink, which can be linked to an FPGA board's input or output functionalities. Such functionalities could encompass network interfaces, PCIe®, cameras, or other data acquisition or processing tools and protocols.
+
+
+### Inter-Kernel Pipes
+
+![](./images/pipes.png)
+
+* We will only focus on Inter-Kernel Pipes to leverage task parallelism
+* As for OpenCL programming, pipes can be blocking or non-blocking
+* For Intel® oneAPI with FPGA, you need to include FPGA extension:
+```cpp
+#include <sycl/ext/intel/fpga_extensions.hpp>
+```
+
+!!! example "Pipe creation and usage"
+    === "Blocking pipes"
+        ```cpp linenums="1"
+        // Using alias eases considerably their usage
+        using my_pipe = ext::intel::pipe<      
+                        class InterKernelPipe, // An identifier for the pipe.
+                        int,                   // The type of data in the pipe.
+                        4>;                    // The capacity of the pipe.
+
+        // Single_task kernel 1
+        q.submit([&](handler& h) {
+            auto A = accessor(B_in, h);
+            h.single_task([=]() {
+                for (int i=0; i < count; i++) {
+                    my_pipe::write(A[i]); // write a single int into the pipe
+                }
+            });
+        }); 
+
+        // Single_task kernel 2
+        q.submit([&](handler& h) {
+            auto A = accessor(B_out, h);
+            h.single_task([=]() {
+                for (int i=0; i < count; i++) {
+                    A[i] = my_pipe::read(); // read the next int from the pipe
+                }
+            });
+        }); 
+        ```
+
+    === "Non-Blocking pipes"
+        ```cpp linenums="1"
+        // Using alias eases considerably their usage
+        using my_pipe = ext::intel::pipe<      
+                        class InterKernelPipe, // An identifier for the pipe.
+                        int,                   // The type of data in the pipe.
+                        4>;                    // The capacity of the pipe.
+
+        // Single_task kernel 1
+        q.submit([&](handler& h) {
+            auto A = accessor(B_in, h);
+            h.single_task([=]() {
+                valid_write = false;
+                for (int i=0; i < count; i++) {
+                    my_pipe::write(A[i],valid_write); // write a single int into the pipe
+                }
+            });
+        }); 
+
+        // Single_task kernel 2
+        q.submit([&](handler& h) {
+            auto A = accessor(B_out, h);
+            h.single_task([=]() {
+                valid_read = false;
+                for (int i=0; i < count; i++) {
+                    A[i] = my_pipe::read(valid_read); // read the next int from the pipe
+                }
+            });
+        }); 
+        
+        ```
+
+!!! warning "Stalling pipes"
+    * Care should be taken when implementing pipes, especially when there is a strong imbalance between the consumer kernel reading from the pipe and the producer kernel that feed the pipe. 
+    * Stalling pipes can be disastrous when using blocking pipes
+
+
+
