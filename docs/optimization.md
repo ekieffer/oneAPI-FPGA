@@ -364,6 +364,7 @@ Pipes function as a first-come, first-served buffer system, linking different pa
             h.single_task([=]() {
                 for (int i=0; i < count; i++) {
                     my_pipe::write(A[i]); // write a single int into the pipe
+                    
                 }
             });
         }); 
@@ -394,6 +395,7 @@ Pipes function as a first-come, first-served buffer system, linking different pa
                 valid_write = false;
                 for (int i=0; i < count; i++) {
                     my_pipe::write(A[i],valid_write); // write a single int into the pipe
+
                 }
             });
         }); 
