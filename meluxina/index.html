@@ -1,0 +1,867 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Webinar/Tutorial on how to use the Intel® oneAPI">
+      
+      
+        <meta name="author" content="Emmanuel Kieffer">
+      
+      
+        <link rel="canonical" href="https://ekieffer.github.io/oneAPI-FPGA/meluxina/">
+      
+      
+        <link rel="prev" href="../tmux_screen/">
+      
+      
+        <link rel="next" href="../intro/">
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.1.21">
+    
+    
+      
+        <title>Meluxina - Introduction to FPGA programming with Intel® oneAPI</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.eebd395e.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#using-the-luxembourgish-national-supercomputer-meluxina" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Introduction to FPGA programming with Intel® oneAPI" class="md-header__button md-logo" aria-label="Introduction to FPGA programming with Intel® oneAPI" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Introduction to FPGA programming with Intel® oneAPI
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Meluxina
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ekieffer/oneAPI-FPGA" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ekieffer/oneAPI-FPGA
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Introduction to FPGA programming with Intel® oneAPI" class="md-nav__button md-logo" aria-label="Introduction to FPGA programming with Intel® oneAPI" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Introduction to FPGA programming with Intel® oneAPI
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ekieffer/oneAPI-FPGA" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ekieffer/oneAPI-FPGA
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        Course description
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          Prerequisites
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Prerequisites
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tmux_screen/" class="md-nav__link">
+        Persistent terminal sessions
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Meluxina
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Meluxina
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#connecting-to-meluxina" class="md-nav__link">
+    Connecting to Meluxina
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accessing-the-fpga-partition" class="md-nav__link">
+    Accessing the fpga partition
+  </a>
+  
+    <nav class="md-nav" aria-label="Accessing the fpga partition">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#offline-compilation" class="md-nav__link">
+    Offline compilation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#execution" class="md-nav__link">
+    Execution
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#emulation" class="md-nav__link">
+    Emulation
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#graphical-sessions-vnc" class="md-nav__link">
+    Graphical sessions (VNC)
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../intro/" class="md-nav__link">
+        Introduction to FPGA computing for the HPC ecosystem
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+        
+      
+      <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          Intel® LLVM SYCL oneAPI DPC++
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Intel® LLVM SYCL oneAPI DPC++
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dpcpp/" class="md-nav__link">
+        What is the Intel® oneAPI DPC++ compiler
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../compile/" class="md-nav__link">
+        Compiling SYCL programs
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../writing/" class="md-nav__link">
+        Developing SYCL programs
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reporting_profiling/" class="md-nav__link">
+        Reporting & profiling SYCL programs
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../optimization/" class="md-nav__link">
+        Optimizing SYCL programs
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#connecting-to-meluxina" class="md-nav__link">
+    Connecting to Meluxina
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accessing-the-fpga-partition" class="md-nav__link">
+    Accessing the fpga partition
+  </a>
+  
+    <nav class="md-nav" aria-label="Accessing the fpga partition">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#offline-compilation" class="md-nav__link">
+    Offline compilation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#execution" class="md-nav__link">
+    Execution
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#emulation" class="md-nav__link">
+    Emulation
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#graphical-sessions-vnc" class="md-nav__link">
+    Graphical sessions (VNC)
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="using-the-luxembourgish-national-supercomputer-meluxina">Using the Luxembourgish National Supercomputer Meluxina<a class="headerlink" href="#using-the-luxembourgish-national-supercomputer-meluxina" title="Permanent link">&para;</a></h1>
+<p>If you follow this course through the workshop organized by <a href="https://supercomputing.lu/">Supercomputing Luxembourg</a>, an allocation on <a href="https://docs.lxp.lu/system/overview/">Meluxina</a> has been provided to you by <a href="https://www.luxprovide.lu/">LuxProvide</a>.</p>
+<p>During this workshop, we will stringly rely on the National Supercomputer. Meluxina is a supercomputer located in Luxembourg, which began operation in 2021. It is part of the European High-Performance Computing (EuroHPC) Joint Undertaking, an initiative by the European Union to develop a world-class supercomputing ecosystem in Europe.</p>
+<p>The Meluxina supercomputer is hosted by LuxProvide, the national HPC organization in Luxembourg. Its computing power is intended to be used for a wide range of tasks, such as data visualization, artificial intelligence, and simulating complex systems, serving both academic researchers and industry. The machine's architecture includes CPUs, GPUs and FPGAs. It is designed to be energy-efficient, utilizing technologies to reduce power consumption and lower its environmental footprint.</p>
+<p>Meluxina's FPGA nodes have two 2 Intel <a href="https://www.intel.com/content/www/us/en/products/details/fpga/stratix/10/mx.html">Stratix 10MX</a> 16 GB FPGA cards. The FPGA partition contains 20 nodes.</p>
+<p><a href="https://www.bittware.com/products/520n-mx/"><img alt="" src="https://www.bittware.com/files/520N-MX-800px.svg" /></a></p>
+<h2 id="connecting-to-meluxina">Connecting to Meluxina<a class="headerlink" href="#connecting-to-meluxina" title="Permanent link">&para;</a></h2>
+<p>You should have received your credentials some days before the workshop. If not, please contact the organizer.
+Please follow the LuxProvide <a href="https://docs.lxp.lu/first-steps/quick_start/">documentation</a> to setup your access.</p>
+<h2 id="accessing-the-fpga-partition">Accessing the fpga partition<a class="headerlink" href="#accessing-the-fpga-partition" title="Permanent link">&para;</a></h2>
+<p>The oneAPI toolkit is evolving quite rapidely. In order to show the last features, the last version has been compiled for the course/workshop.</p>
+<h3 id="offline-compilation">Offline compilation<a class="headerlink" href="#offline-compilation" title="Permanent link">&para;</a></h3>
+<p>In order to use the oneAPI toolkit, you first need to take an interactive job. We strongly recommend to open a persistent terminal session using <code>tmux</code></p>
+<p>As we are focusing on FPGA, we select the fpga partition:</p>
+<p><div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>$<span class="w"> </span>tmux<span class="w"> </span>new<span class="w"> </span>-s<span class="w"> </span>fpga_session
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="o">[</span>fpga_session<span class="o">]</span>$<span class="w"> </span>salloc<span class="w"> </span>-A<span class="w"> </span>p200117<span class="w"> </span>-t<span class="w"> </span><span class="m">01</span>:00:00<span class="w"> </span>-q<span class="w"> </span>default<span class="w"> </span>-p<span class="w"> </span>fpga<span class="w"> </span>-N<span class="w"> </span><span class="m">1</span>
+</span></code></pre></div>
+Once the fpga node has been allocated to you, you can load the lastest oneAPI toolkit with 
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="o">[</span>fpga_session<span class="o">]</span>$<span class="w"> </span>module<span class="w"> </span>use<span class="w"> </span>/project/home/p200117/apps/u100057/easybuild/modules/all
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="o">[</span>fpga_session<span class="o">]</span>$<span class="w"> </span>module<span class="w"> </span>load<span class="w"> </span>intel-compilers/2023.2.1-fpga_compile
+</span></code></pre></div>
+The root folder containing binaries, include and lib can be located using the <code>${EBROOTINTELMINCOMPILERS}</code>.
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>$<span class="w"> </span>ls<span class="w"> </span><span class="si">${</span><span class="nv">EBROOTINTELMINCOMPILERS</span><span class="si">}</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>total<span class="w"> </span><span class="m">84</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>drwxr-xr-x<span class="w"> </span><span class="m">3</span><span class="w"> </span>apps<span class="w"> </span>hpcusers<span class="w">  </span><span class="m">4096</span><span class="w"> </span>Nov<span class="w"> </span><span class="m">12</span><span class="w">  </span><span class="m">2022</span><span class="w"> </span>compiler
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>drwxr-xr-x<span class="w"> </span><span class="m">6</span><span class="w"> </span>apps<span class="w"> </span>hpcusers<span class="w">  </span><span class="m">4096</span><span class="w"> </span>Nov<span class="w"> </span><span class="m">12</span><span class="w">  </span><span class="m">2022</span><span class="w"> </span>conda_channel
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>drwxr-xr-x<span class="w"> </span><span class="m">3</span><span class="w"> </span>apps<span class="w"> </span>hpcusers<span class="w">  </span><span class="m">4096</span><span class="w"> </span>Nov<span class="w"> </span><span class="m">12</span><span class="w">  </span><span class="m">2022</span><span class="w"> </span>debugger
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>drwxr-xr-x<span class="w"> </span><span class="m">3</span><span class="w"> </span>apps<span class="w"> </span>hpcusers<span class="w">  </span><span class="m">4096</span><span class="w"> </span>Nov<span class="w"> </span><span class="m">12</span><span class="w">  </span><span class="m">2022</span><span class="w"> </span>dev-utilities
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>drwxr-xr-x<span class="w"> </span><span class="m">3</span><span class="w"> </span>apps<span class="w"> </span>hpcusers<span class="w">  </span><span class="m">4096</span><span class="w"> </span>Nov<span class="w"> </span><span class="m">12</span><span class="w">  </span><span class="m">2022</span><span class="w"> </span>easybuild
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>drwxr-xr-x<span class="w"> </span><span class="m">3</span><span class="w"> </span>apps<span class="w"> </span>hpcusers<span class="w">  </span><span class="m">4096</span><span class="w"> </span>Nov<span class="w"> </span><span class="m">12</span><span class="w">  </span><span class="m">2022</span><span class="w"> </span>etc
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>drwxr-xr-x<span class="w"> </span><span class="m">3</span><span class="w"> </span>apps<span class="w"> </span>hpcusers<span class="w">  </span><span class="m">4096</span><span class="w"> </span>Nov<span class="w"> </span><span class="m">12</span><span class="w">  </span><span class="m">2022</span><span class="w"> </span>licensing
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>drwxr-xr-x<span class="w"> </span><span class="m">2</span><span class="w"> </span>apps<span class="w"> </span>hpcusers<span class="w">  </span><span class="m">4096</span><span class="w"> </span>Nov<span class="w"> </span><span class="m">12</span><span class="w">  </span><span class="m">2022</span><span class="w"> </span>logs
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>-rwxr-xr-x<span class="w"> </span><span class="m">1</span><span class="w"> </span>apps<span class="w"> </span>hpcusers<span class="w"> </span><span class="m">10249</span><span class="w"> </span>Feb<span class="w"> </span><span class="m">16</span><span class="w">  </span><span class="m">2022</span><span class="w"> </span>modulefiles-setup.sh
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>drwxr-xr-x<span class="w"> </span><span class="m">3</span><span class="w"> </span>apps<span class="w"> </span>hpcusers<span class="w">  </span><span class="m">4096</span><span class="w"> </span>Nov<span class="w"> </span><span class="m">12</span><span class="w">  </span><span class="m">2022</span><span class="w"> </span>mpi
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>-rwxr-xr-x<span class="w"> </span><span class="m">1</span><span class="w"> </span>apps<span class="w"> </span>hpcusers<span class="w"> </span><span class="m">26718</span><span class="w"> </span>Feb<span class="w"> </span><span class="m">11</span><span class="w">  </span><span class="m">2022</span><span class="w"> </span>setvars.sh
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>-rw-r--r--<span class="w"> </span><span class="m">1</span><span class="w"> </span>apps<span class="w"> </span>hpcusers<span class="w">   </span><span class="m">155</span><span class="w"> </span>Sep<span class="w"> </span><span class="m">13</span><span class="w">  </span><span class="m">2019</span><span class="w"> </span>support.txt
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>drwxr-xr-x<span class="w"> </span><span class="m">3</span><span class="w"> </span>apps<span class="w"> </span>hpcusers<span class="w">  </span><span class="m">4096</span><span class="w"> </span>Nov<span class="w"> </span><span class="m">12</span><span class="w">  </span><span class="m">2022</span><span class="w"> </span>tbb
+</span></code></pre></div>
+The process of creating an FPGA hardware image necessitates the use of Intel® Quartus® Prime software to transform your design from RTL (Register Transfer Level) to the FPGA's primitive hardware resources. A FPGA BSP (Board Support Package) refers to a collection of software and hardware components designed to support and enable the development of applications on a specific FPGA board. BSPs are commonly used in FPGA development to provide an abstraction layer between the hardware and software, making it easier for developers to create and run their applications on the FPGA platform.
+In order work with the Bittware Stratix 520MX provided by LuxProvide, we need to load the corresponding BSP.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>$<span class="w"> </span>module<span class="w"> </span>load<span class="w"> </span>520nmx/20.4
+</span></code></pre></div>
+<h3 id="execution">Execution<a class="headerlink" href="#execution" title="Permanent link">&para;</a></h3>
+<p>Execution does not require the hardware compiler <a href="https://www.intel.com/content/www/us/en/products/details/fpga/development-tools/quartus-prime.html">Quartus Prime</a>. In order to execute the FPGA binary once it has been generated, the following modules should be loaded instead:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="o">[</span>fpga_session<span class="o">]</span>$<span class="w"> </span>module<span class="w"> </span>purge
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="o">[</span>fpga_session<span class="o">]</span>$<span class="w"> </span>module<span class="w"> </span>load<span class="w"> </span>520nmx/20.4
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># Don&#39;t forget to comment the next command if you have started a new tmux/screen session</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1">#[fpga_session]$ module use /project/home/p200117/apps/u100057/easybuild/modules/all</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="o">[</span>fpga_session<span class="o">]</span>$<span class="w"> </span>module<span class="w"> </span>load<span class="w"> </span>intel-compilers/2023.2.1-fpga_execute
+</span></code></pre></div>
+<h3 id="emulation">Emulation<a class="headerlink" href="#emulation" title="Permanent link">&para;</a></h3>
+<p>Emulation only relies on the host cpu. In theory, you don't need to load the BSP board but you still need to <code>module load intel-compilers/2023.2.1-fpga_execute</code>.</p>
+<h2 id="graphical-sessions-vnc">Graphical sessions (VNC)<a class="headerlink" href="#graphical-sessions-vnc" title="Permanent link">&para;</a></h2>
+<p>During this course/workshop, we will need GUI software and, more particularly,the <a href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/vtune-profiler-download.html">Intel® VTune™ Profiler</a>. Using the Intel® VTune™ Profiler allows you to analyze the performance of your application and identify performance bottlenecks in your code. </p>
+<p>You can use the profiler in interactive or batch mode. By default, the <code>vtune-gui</code> executable is started after having enabled X11 forwarding (see <a href="https://docs.lxp.lu/software/module_example/vtune/">Meluxina's documentation</a>). X11 forwarding can be very laggy when GUI applications are too demanding. This is the reason why we choose to use VNC.</p>
+<p>VNC (Virtual Network Computing) is a technology that allows you to remotely access and control a computer's desktop environment over a network connection. It enables users to view and interact with a remote computer as if they were sitting in front of it physically. VNC works by transmitting the graphical user interface (GUI) of the remote computer to the client device and relaying back user input from the client to the remote computer.</p>
+<p>The VNC system consists of two main components:</p>
+<ul>
+<li>
+<p>VNC Server: This software component runs on the computer that you want to access remotely. It captures the graphical output of the desktop environment and sends it over the network to the client.</p>
+</li>
+<li>
+<p>VNC Viewer: The VNC Viewer is the client software that runs on the device from which you want to access the remote computer. It receives the graphical data from the VNC server and presents it to the user, allowing them to interact with the remote desktop as if it were running locally.</p>
+</li>
+</ul>
+<p>Meluxina nodes do not propose a VNC server application but we can remedy to it using <a href="https://sylabs.io/singularity/">Singularity-CE containers</a>. As this is not a course on container, we will not explain in details the <a href="https://github.com/ekieffer/oneAPI-FPGA/blob/main/utils/vnc-rocky8.def">singularity definition file</a>.</p>
+<p>In order to faciliate its usage, the following <a href="https://github.com/ekieffer/oneAPI-FPGA/blob/main/utils/launcher_vnc-rocky8.sh">launcher</a> can be used to start a batch job.</p>
+<div class="admonition example">
+<p class="admonition-title">launcher_vtune.sh</p>
+<div class="language-bash highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-5-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-5-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-5-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-5-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-5-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-5-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-5-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-5-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-5-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-5-10">10</a></span>
+<span class="normal"><a href="#__codelineno-5-11">11</a></span>
+<span class="normal"><a href="#__codelineno-5-12">12</a></span>
+<span class="normal"><a href="#__codelineno-5-13">13</a></span>
+<span class="normal"><a href="#__codelineno-5-14">14</a></span>
+<span class="normal"><a href="#__codelineno-5-15">15</a></span>
+<span class="normal"><a href="#__codelineno-5-16">16</a></span>
+<span class="normal"><a href="#__codelineno-5-17">17</a></span>
+<span class="normal"><a href="#__codelineno-5-18">18</a></span>
+<span class="normal"><a href="#__codelineno-5-19">19</a></span>
+<span class="normal"><a href="#__codelineno-5-20">20</a></span>
+<span class="normal"><a href="#__codelineno-5-21">21</a></span>
+<span class="normal"><a href="#__codelineno-5-22">22</a></span>
+<span class="normal"><a href="#__codelineno-5-23">23</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1"></a><span class="ch">#!/bin/bash -l</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2"></a><span class="c1">#SBATCH --nodes=1                          # number of nodes</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3"></a><span class="c1">#SBATCH --ntasks=2                         # number of tasks</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4"></a><span class="c1">#SBATCH --cpus-per-task=1                  # number of cores per task</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5"></a><span class="c1">#SBATCH --time=40:00:00                    # time (HH:MM:SS)</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6"></a><span class="c1">#SBATCH --account=p200117                  # project account</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7"></a><span class="c1">#SBATCH --partition=cpu                   # partition</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8"></a><span class="c1">#SBATCH --qos=default                         # QOS</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9"></a><span class="c1">##SBATCH --mail-user=emmanuel.kieffer@uni.lu</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10"></a><span class="c1">##SBATCH --mail-type=BEGIN,FAIL,END</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11"></a>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12"></a>module<span class="w"> </span>load<span class="w"> </span>Singularity-CE/3.10.2-GCCcore-11.3.0
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13"></a>
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14"></a><span class="nv">IP_ADDRESS</span><span class="o">=</span><span class="k">$(</span>hostname<span class="w"> </span>-I<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">&#39;{print $1}&#39;</span><span class="k">)</span>
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15"></a><span class="nv">WEB_PORT</span><span class="o">=</span><span class="s2">&quot;8020&quot;</span>
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16"></a><span class="nv">VNC_PORT</span><span class="o">=</span><span class="s2">&quot;5910&quot;</span>
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17"></a><span class="nv">FORWARD_PORT</span><span class="o">=</span><span class="s2">&quot;9910&quot;</span>
+</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;On your laptop: ssh -p 8822 -NL </span><span class="si">${</span><span class="nv">FORWARD_PORT</span><span class="si">}</span><span class="s2">:</span><span class="si">${</span><span class="nv">IP_ADDRESS</span><span class="si">}</span><span class="s2">:</span><span class="si">${</span><span class="nv">WEB_PORT</span><span class="si">}</span><span class="s2"> </span><span class="si">${</span><span class="nv">USER</span><span class="si">}</span><span class="s2">@login.lxp.lu &quot;</span>
+</span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Open following link http://localhost:</span><span class="si">${</span><span class="nv">FORWARD_PORT</span><span class="si">}</span><span class="s2">/vnc.html&quot;</span>
+</span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20"></a>
+</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21"></a>
+</span><span id="__span-5-22"><a id="__codelineno-5-22" name="__codelineno-5-22"></a>srun<span class="w"> </span>-N1<span class="w"> </span>-n1<span class="w"> </span>-c1<span class="w"> </span>singularity<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>vnc-rocky8.app<span class="w"> </span>/opt/websockify/run<span class="w"> </span>--web<span class="w"> </span>/opt/noVNC/<span class="w"> </span><span class="si">${</span><span class="nv">WEB_PORT</span><span class="si">}</span><span class="w"> </span><span class="si">${</span><span class="nv">IP_ADDRESS</span><span class="si">}</span>:<span class="si">${</span><span class="nv">VNC_PORT</span><span class="si">}</span><span class="w"> </span><span class="p">&amp;</span>
+</span><span id="__span-5-23"><a id="__codelineno-5-23" name="__codelineno-5-23"></a>srun<span class="w"> </span>-N1<span class="w"> </span>-n1<span class="w"> </span>-c1<span class="w"> </span>singularity<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-B<span class="w"> </span>/apps:/apps<span class="w"> </span>-B<span class="w"> </span>/project:/project<span class="w"> </span>-B<span class="w"> </span>/project:/project<span class="w"> </span>-B<span class="w"> </span>/mnt:/mnt<span class="w">  </span>vnc-rocky8.app<span class="w"> </span>/bin/bash<span class="w"> </span>start_script.sh<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</span></code></pre></div></td></tr></table></div>
+</div>
+<ul>
+<li>Line 12 loads singularity</li>
+<li>Lines 15-17 defines all ports</li>
+<li>Lines 18 and 19 just echo the commands you will need to execute locally on your laptop<ul>
+<li>Line 18: Open a ssh tunnel</li>
+<li>Line 19: The link to access to the web-based GUI</li>
+</ul>
+</li>
+<li>You can adapt the number of task and the number of cores per tasks</li>
+</ul>
+<p>Before using this script, it is more convenient to setup a password in interactive mode. So connect to an interactive job using <code>salloc -A &lt;account&gt; -t 00:30:00 -q default -p cpu -N 1</code>.
+Load the Singularity module and exec vncpasswd using the container <code>vtune_vnc_rocky8.app</code>. </p>
+<div class="admonition example">
+<p class="admonition-title">Example</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>$<span class="w"> </span>salloc<span class="w"> </span>-A<span class="w"> </span>p200117<span class="w"> </span>-t<span class="w"> </span><span class="m">48</span>:00:00<span class="w"> </span>-q<span class="w"> </span>default<span class="w"> </span>-p<span class="w"> </span>fpga<span class="w"> </span>-N<span class="w"> </span><span class="m">1</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="o">(</span>mel3013<span class="o">)</span>$<span class="w"> </span>module<span class="w"> </span>load<span class="w"> </span>Singularity-CE/3.10.2-GCCcore-11.3.0
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="o">(</span>mel3013<span class="o">)</span>$<span class="w"> </span>singularity<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>vnc-rocky8.app<span class="w"> </span>vncpasswd
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">           </span>INFO:<span class="w">    </span>Converting<span class="w"> </span>SIF<span class="w"> </span>file<span class="w"> </span>to<span class="w"> </span>temporary<span class="w"> </span>sandbox...
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">           </span>Password:
+</span></code></pre></div>
+</div>
+<p>Add a password and close the interactive job <code>&lt;CTRL-D&gt;</code>. Your vnc password is now setup.</p>
+<p>Use <code>sbatch launcher_vnc-rocky8.sh</code> to start the vnc server inside a batch job. Once resources are available, the job starts.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>$<span class="w"> </span>squeue
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>JOBID<span class="w"> </span>PARTITION<span class="w">     </span>NAME<span class="w">     </span>USER<span class="w">    </span>ACCOUNT<span class="w">    </span>STATE<span class="w">       </span>TIME<span class="w">   </span>TIME_LIMIT<span class="w">  </span>NODES<span class="w"> </span>NODELIST<span class="o">(</span>REASON<span class="o">)</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="m">409979</span><span class="w">       </span>cpu<span class="w"> </span>launcher<span class="w">  </span>u100057<span class="w">    </span>p200117<span class="w">  </span>RUNNING<span class="w">       </span><span class="m">0</span>:08<span class="w">   </span><span class="m">1</span>-16:00:00<span class="w">      </span><span class="m">1</span><span class="w"> </span>mel0533
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="m">409965</span><span class="w">      </span>fpga<span class="w"> </span>interact<span class="w">  </span>u100057<span class="w">    </span>p200117<span class="w">  </span>RUNNING<span class="w">      </span><span class="m">47</span>:07<span class="w">   </span><span class="m">2</span>-00:00:00<span class="w">      </span><span class="m">1</span><span class="w"> </span>mel3009
+</span></code></pre></div>
+<ul>
+<li>
+<p>Record the jobid and open the slurm output file:
+<div class="language-bash highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-8-1">1</a></span>
+<span class="normal"><a href="#__codelineno-8-2">2</a></span>
+<span class="normal"><a href="#__codelineno-8-3">3</a></span>
+<span class="normal"><a href="#__codelineno-8-4">4</a></span>
+<span class="normal"><a href="#__codelineno-8-5">5</a></span>
+<span class="normal"><a href="#__codelineno-8-6">6</a></span>
+<span class="normal"><a href="#__codelineno-8-7">7</a></span>
+<span class="normal"><a href="#__codelineno-8-8">8</a></span>
+<span class="normal"><a href="#__codelineno-8-9">9</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1"></a>cat<span class="w"> </span>slurm-409979.out<span class="w"> </span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2"></a>On<span class="w"> </span>your<span class="w"> </span>laptop:<span class="w"> </span>ssh<span class="w"> </span>-p<span class="w"> </span><span class="m">8822</span><span class="w"> </span>-NL<span class="w"> </span><span class="m">9910</span>:10.3.25.25:8020<span class="w"> </span>u100057@login.lxp.lu<span class="w"> </span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3"></a>Open<span class="w"> </span>following<span class="w"> </span>link<span class="w"> </span>http://localhost:9910/vnc.html
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4"></a>INFO:<span class="w">    </span>Converting<span class="w"> </span>SIF<span class="w"> </span>file<span class="w"> </span>to<span class="w"> </span>temporary<span class="w"> </span>sandbox...
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5"></a>WebSocket<span class="w"> </span>server<span class="w"> </span>settings:
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6"></a><span class="w">  </span>-<span class="w"> </span>Listen<span class="w"> </span>on<span class="w"> </span>:8020
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7"></a><span class="w">  </span>-<span class="w"> </span>Web<span class="w"> </span>server.<span class="w"> </span>Web<span class="w"> </span>root:<span class="w"> </span>/opt/noVNC
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8"></a><span class="w">  </span>-<span class="w"> </span>No<span class="w"> </span>SSL/TLS<span class="w"> </span>support<span class="w"> </span><span class="o">(</span>no<span class="w"> </span>cert<span class="w"> </span>file<span class="o">)</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9"></a><span class="w">  </span>-<span class="w"> </span>proxying<span class="w"> </span>from<span class="w"> </span>:8020<span class="w"> </span>to<span class="w"> </span><span class="m">10</span>.3.25.25:5910
+</span></code></pre></div></td></tr></table></div></p>
+</li>
+<li>
+<p>Copy-paste into your laptop terminal the ssh command</p>
+</li>
+<li>Then click on the http link. You should see a new tab opening with the following content:</li>
+</ul>
+<p><img alt="" src="../images/novnc.png" /></p>
+<ul>
+<li>Click on connect and enter your vnc password</li>
+<li>Your should see now the VTune profiler</li>
+</ul>
+<p><img alt="" src="../images/vnc-rocky8.png" /></p>
+
+  <hr>
+<div class="md-source-file">
+  <small>
+    
+      Last update:
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">October 23, 2023</span>
+      
+    
+  </small>
+</div>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2023 E. Kieffer
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/ULHPC" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1zM480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2zm-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3zm-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://twitter.com/ULHPC" target="_blank" rel="noopener" title="twitter.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.expand", "content.code.copy", "content.code.select"], "search": "../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.220ee61c.min.js"></script>
+      
+        
+          <script src="../javascripts/extra.js"></script>
+        
+      
+        
+          <script src="../javascripts/bootstrap.min.js"></script>
+        
+      
+        
+          <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+        
+      
+        
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js"></script>
+        
+      
+        
+          <script src="../javascripts/tables.js"></script>
+        
+      
+    
+  </body>
+</html>
